@@ -42,17 +42,14 @@ type FileClient struct {
 	labels      []string
 	labelValues []string
 	orgID       string
-	engine      *logql.Engine
+	engine      logql.Engine
 }
 
 // NewFileClient returns the new instance of FileClient for the given `io.ReadCloser`
 func NewFileClient(r io.ReadCloser) *FileClient {
-	lbs := []labels.Label{
-		{
-			Name:  defaultLabelKey,
-			Value: defaultLabelValue,
-		},
-	}
+	lbs := labels.New(
+		labels.Label{Name: defaultLabelKey, Value: defaultLabelValue},
+	)
 
 	eng := logql.NewEngine(logql.EngineOpts{}, &querier{r: r, labels: lbs}, &limiter{n: defaultMetricSeriesLimit}, log.Logger)
 	return &FileClient{
@@ -207,7 +204,7 @@ func (f *FileClient) GetVolumeRange(_ *volume.Query) (*loghttp.QueryResponse, er
 }
 
 func (f *FileClient) GetDetectedFields(
-	_ string,
+	_, _ string,
 	_, _ int,
 	_, _ time.Time,
 	_ time.Duration,
@@ -215,6 +212,18 @@ func (f *FileClient) GetDetectedFields(
 ) (*loghttp.DetectedFieldsResponse, error) {
 	// TODO(twhitney): could we teach logcli to do this?
 	return nil, ErrNotSupported
+}
+
+func (f *FileClient) CreateDeleteRequest(_ DeleteRequestParams, _ bool) error {
+	return ErrNotSupported
+}
+
+func (f *FileClient) ListDeleteRequests(_ bool) ([]DeleteRequest, error) {
+	return nil, ErrNotSupported
+}
+
+func (f *FileClient) CancelDeleteRequest(_ string, _ bool, _ bool) error {
+	return ErrNotSupported
 }
 
 type limiter struct {
@@ -239,6 +248,10 @@ func (l *limiter) BlockedQueries(_ context.Context, _ string) []*validation.Bloc
 
 func (l *limiter) RequiredLabels(_ context.Context, _ string) []string {
 	return nil
+}
+
+func (l *limiter) EnableMultiVariantQueries(_ string) bool {
+	return false // Multi-variant queries disabled by default for file client
 }
 
 type querier struct {
@@ -285,7 +298,7 @@ func newFileIterator(
 
 	processLine := func(line string) {
 		ts := time.Now()
-		parsedLine, parsedLabels, matches := pipeline.ProcessString(ts.UnixNano(), line)
+		parsedLine, parsedLabels, matches := pipeline.ProcessString(ts.UnixNano(), line, labels.EmptyLabels())
 		if !matches {
 			return
 		}

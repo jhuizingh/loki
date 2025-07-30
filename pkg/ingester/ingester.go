@@ -24,14 +24,16 @@ import (
 	"github.com/grafana/dskit/ring"
 	"github.com/grafana/dskit/services"
 	"github.com/grafana/dskit/tenant"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/labels"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/health/grpc_health_v1"
 
 	"github.com/grafana/loki/v3/pkg/analytics"
+	"github.com/grafana/loki/v3/pkg/compactor/retention"
 	"github.com/grafana/loki/v3/pkg/compression"
 	"github.com/grafana/loki/v3/pkg/distributor/writefailures"
 	"github.com/grafana/loki/v3/pkg/ingester/client"
@@ -89,18 +91,18 @@ var (
 type Config struct {
 	LifecyclerConfig ring.LifecyclerConfig `yaml:"lifecycler,omitempty" doc:"description=Configures how the lifecycle of the ingester will operate and where it will register for discovery."`
 
-	ConcurrentFlushes   int                  `yaml:"concurrent_flushes"`
-	FlushCheckPeriod    time.Duration        `yaml:"flush_check_period"`
-	FlushOpBackoff      backoff.Config       `yaml:"flush_op_backoff"`
-	FlushOpTimeout      time.Duration        `yaml:"flush_op_timeout"`
-	RetainPeriod        time.Duration        `yaml:"chunk_retain_period"`
-	MaxChunkIdle        time.Duration        `yaml:"chunk_idle_period"`
-	BlockSize           int                  `yaml:"chunk_block_size"`
-	TargetChunkSize     int                  `yaml:"chunk_target_size"`
-	ChunkEncoding       string               `yaml:"chunk_encoding"`
-	parsedEncoding      compression.Encoding `yaml:"-"` // placeholder for validated encoding
-	MaxChunkAge         time.Duration        `yaml:"max_chunk_age"`
-	AutoForgetUnhealthy bool                 `yaml:"autoforget_unhealthy"`
+	ConcurrentFlushes   int               `yaml:"concurrent_flushes"`
+	FlushCheckPeriod    time.Duration     `yaml:"flush_check_period"`
+	FlushOpBackoff      backoff.Config    `yaml:"flush_op_backoff"`
+	FlushOpTimeout      time.Duration     `yaml:"flush_op_timeout"`
+	RetainPeriod        time.Duration     `yaml:"chunk_retain_period"`
+	MaxChunkIdle        time.Duration     `yaml:"chunk_idle_period"`
+	BlockSize           int               `yaml:"chunk_block_size"`
+	TargetChunkSize     int               `yaml:"chunk_target_size"`
+	ChunkEncoding       string            `yaml:"chunk_encoding"`
+	parsedEncoding      compression.Codec `yaml:"-"` // placeholder for validated encoding
+	MaxChunkAge         time.Duration     `yaml:"max_chunk_age"`
+	AutoForgetUnhealthy bool              `yaml:"autoforget_unhealthy"`
 
 	// Synchronization settings. Used to make sure that ingesters cut their chunks at the same moments.
 	SyncPeriod         time.Duration `yaml:"sync_period"`
@@ -150,7 +152,7 @@ func (cfg *Config) RegisterFlags(f *flag.FlagSet) {
 	f.DurationVar(&cfg.MaxChunkIdle, "ingester.chunks-idle-period", 30*time.Minute, "How long chunks should sit in-memory with no updates before being flushed if they don't hit the max block size. This means that half-empty chunks will still be flushed after a certain period as long as they receive no further activity.")
 	f.IntVar(&cfg.BlockSize, "ingester.chunks-block-size", 256*1024, "The targeted _uncompressed_ size in bytes of a chunk block When this threshold is exceeded the head block will be cut and compressed inside the chunk.")
 	f.IntVar(&cfg.TargetChunkSize, "ingester.chunk-target-size", 1572864, "A target _compressed_ size in bytes for chunks. This is a desired size not an exact size, chunks may be slightly bigger or significantly smaller if they get flushed for other reasons (e.g. chunk_idle_period). A value of 0 creates chunks with a fixed 10 blocks, a non zero value will create chunks with a variable number of blocks to meet the target size.") // 1.5 MB
-	f.StringVar(&cfg.ChunkEncoding, "ingester.chunk-encoding", compression.EncGZIP.String(), fmt.Sprintf("The algorithm to use for compressing chunk. (%s)", compression.SupportedEncoding()))
+	f.StringVar(&cfg.ChunkEncoding, "ingester.chunk-encoding", compression.GZIP.String(), fmt.Sprintf("The algorithm to use for compressing chunk. (%s)", compression.SupportedCodecs()))
 	f.DurationVar(&cfg.SyncPeriod, "ingester.sync-period", 1*time.Hour, "Parameters used to synchronize ingesters to cut chunks at the same moment. Sync period is used to roll over incoming entry to a new chunk. If chunk's utilization isn't high enough (eg. less than 50% when sync_min_utilization is set to 0.5), then this chunk rollover doesn't happen.")
 	f.Float64Var(&cfg.SyncMinUtilization, "ingester.sync-min-utilization", 0.1, "Minimum utilization of chunk when doing synchronization.")
 	f.IntVar(&cfg.MaxReturnedErrors, "ingester.max-ignored-stream-errors", 10, "The maximum number of errors a stream will report to the user when a push fails. 0 to make unlimited.")
@@ -164,7 +166,7 @@ func (cfg *Config) RegisterFlags(f *flag.FlagSet) {
 }
 
 func (cfg *Config) Validate() error {
-	enc, err := compression.ParseEncoding(cfg.ChunkEncoding)
+	enc, err := compression.ParseCodec(cfg.ChunkEncoding)
 	if err != nil {
 		return err
 	}
@@ -265,6 +267,8 @@ type Ingester struct {
 
 	limiter *Limiter
 
+	tenantsRetention *retention.TenantsRetention
+
 	// Denotes whether the ingester should flush on shutdown.
 	// Currently only used by the WAL to signal when the disk is full.
 	flushOnShutdownSwitch *OnceSwitch
@@ -292,15 +296,15 @@ type Ingester struct {
 
 	// recalculateOwnedStreams periodically checks the ring for changes and recalculates owned streams for each instance.
 	readRing                ring.ReadRing
-	recalculateOwnedStreams *recalculateOwnedStreams
+	recalculateOwnedStreams *recalculateOwnedStreamsSvc
 
 	ingestPartitionID       int32
 	partitionRingLifecycler *ring.PartitionInstanceLifecycler
-	partitionReader         *partition.Reader
+	partitionReader         *partition.ReaderService
 }
 
 // New makes a new Ingester.
-func New(cfg Config, clientConfig client.Config, store Store, limits Limits, configs *runtime.TenantConfigs, registerer prometheus.Registerer, writeFailuresCfg writefailures.Cfg, metricsNamespace string, logger log.Logger, customStreamsTracker push.UsageTracker, readRing ring.ReadRing) (*Ingester, error) {
+func New(cfg Config, clientConfig client.Config, store Store, limits Limits, configs *runtime.TenantConfigs, registerer prometheus.Registerer, writeFailuresCfg writefailures.Cfg, metricsNamespace string, logger log.Logger, customStreamsTracker push.UsageTracker, readRing ring.ReadRing, partitionRingWatcher ring.PartitionRingReader) (*Ingester, error) {
 	if cfg.ingesterClientFactory == nil {
 		cfg.ingesterClientFactory = client.New
 	}
@@ -335,7 +339,7 @@ func New(cfg Config, clientConfig client.Config, store Store, limits Limits, con
 	i.replayController = newReplayController(metrics, cfg.WAL, &replayFlusher{i})
 
 	if cfg.WAL.Enabled {
-		if err := os.MkdirAll(cfg.WAL.Dir, os.ModePerm); err != nil {
+		if err := os.MkdirAll(cfg.WAL.Dir, 0o750); err != nil {
 			// Best effort try to make path absolute for easier debugging.
 			path, _ := filepath.Abs(cfg.WAL.Dir)
 			if path == "" {
@@ -380,17 +384,20 @@ func New(cfg Config, clientConfig client.Config, store Store, limits Limits, con
 			logger,
 			prometheus.WrapRegistererWithPrefix("loki_", registerer))
 
-		i.partitionReader, err = partition.NewReader(cfg.KafkaIngestion.KafkaConfig, i.ingestPartitionID, cfg.LifecyclerConfig.ID, NewKafkaConsumerFactory(i, logger, registerer), logger, registerer)
+		i.partitionReader, err = partition.NewReaderService(
+			cfg.KafkaIngestion.KafkaConfig,
+			i.ingestPartitionID,
+			cfg.LifecyclerConfig.ID,
+			NewKafkaConsumerFactory(i, registerer, cfg.KafkaIngestion.KafkaConfig.MaxConsumerWorkers),
+			logger,
+			registerer,
+		)
 		if err != nil {
 			return nil, err
 		}
 		i.lifecyclerWatcher.WatchService(i.partitionRingLifecycler)
 		i.lifecyclerWatcher.WatchService(i.partitionReader)
 	}
-
-	// Now that the lifecycler has been created, we can create the limiter
-	// which depends on it.
-	i.limiter = NewLimiter(limits, metrics, i.lifecycler, cfg.LifecyclerConfig.RingConfig.ReplicationFactor)
 
 	i.Service = services.NewBasicService(i.starting, i.running, i.stopping)
 
@@ -408,7 +415,24 @@ func New(cfg Config, clientConfig client.Config, store Store, limits Limits, con
 		i.SetExtractorWrapper(i.cfg.SampleExtractorWrapper)
 	}
 
-	i.recalculateOwnedStreams = newRecalculateOwnedStreams(i.getInstances, i.lifecycler.ID, i.readRing, cfg.OwnedStreamsCheckInterval, util_log.Logger)
+	var streamCountLimiter limiterRingStrategy
+	var ownedStreamsStrategy ownershipStrategy
+	var streamRateLimiter RateLimiterStrategy
+	if i.cfg.KafkaIngestion.Enabled {
+		streamCountLimiter = newPartitionRingLimiterStrategy(partitionRingWatcher, limits.IngestionPartitionsTenantShardSize)
+		ownedStreamsStrategy = newOwnedStreamsPartitionStrategy(i.ingestPartitionID, partitionRingWatcher, limits.IngestionPartitionsTenantShardSize, util_log.Logger)
+		streamRateLimiter = &NoLimitsStrategy{} // Kafka ingestion does not have per-stream rate limits, because we control the consumption speed.
+	} else {
+		streamCountLimiter = newIngesterRingLimiterStrategy(i.lifecycler, cfg.LifecyclerConfig.RingConfig.ReplicationFactor)
+		ownedStreamsStrategy = newOwnedStreamsIngesterStrategy(i.lifecycler.ID, i.readRing, util_log.Logger)
+		streamRateLimiter = &TenantBasedStrategy{limits: limits}
+	}
+	// Now that the lifecycler has been created, we can create the limiter
+	// which depends on it.
+	i.limiter = NewLimiter(limits, metrics, streamCountLimiter, streamRateLimiter)
+
+	i.tenantsRetention = retention.NewTenantsRetention(i.limiter.limits)
+	i.recalculateOwnedStreams = newRecalculateOwnedStreamsSvc(i.getInstances, ownedStreamsStrategy, cfg.OwnedStreamsCheckInterval, util_log.Logger)
 
 	return i, nil
 }
@@ -600,6 +624,10 @@ func (i *Ingester) starting(ctx context.Context) (err error) {
 		i.setPrepareShutdown()
 	}
 
+	// start our flush loop: this needs to start before the partition-reader in order for chunks to be shipped in the case of Kafka catching up.
+	i.loopDone.Add(1)
+	go i.loop()
+
 	// When kafka ingestion is enabled, we have to make sure that reader catches up replaying the partition
 	// BEFORE the ingester ring lifecycler is started, because once the ingester ring lifecycler will start
 	// it will switch the ingester state in the ring to ACTIVE.
@@ -635,9 +663,7 @@ func (i *Ingester) starting(ctx context.Context) (err error) {
 			return fmt.Errorf("failed to start partition ring lifecycler: %w", err)
 		}
 	}
-	// start our loop
-	i.loopDone.Add(1)
-	go i.loop()
+
 	return nil
 }
 
@@ -739,7 +765,7 @@ func (i *Ingester) loop() {
 	// flush at the same time. Flushing at the same time can cause concurrently
 	// writing the same chunk to object storage, which in AWS S3 leads to being
 	// rate limited.
-	jitter := time.Duration(rand.Int63n(int64(float64(i.cfg.FlushCheckPeriod.Nanoseconds()) * 0.8)))
+	jitter := time.Duration(rand.Int63n(int64(float64(i.cfg.FlushCheckPeriod.Nanoseconds()) * 0.8))) //#nosec G404 -- Jitter does not require a CSPRNG.
 	initialDelay := time.NewTimer(jitter)
 	defer initialDelay.Stop()
 
@@ -989,10 +1015,9 @@ func (i *Ingester) Push(ctx context.Context, req *logproto.PushRequest) (*logpro
 // GetStreamRates returns a response containing all streams and their current rate
 // TODO: It might be nice for this to be human readable, eventually: Sort output and return labels, too?
 func (i *Ingester) GetStreamRates(ctx context.Context, _ *logproto.StreamRatesRequest) (*logproto.StreamRatesResponse, error) {
-	if sp := opentracing.SpanFromContext(ctx); sp != nil {
-		sp.LogKV("event", "ingester started to handle GetStreamRates")
-		defer sp.LogKV("event", "ingester finished handling GetStreamRates")
-	}
+	sp := trace.SpanFromContext(ctx)
+	sp.AddEvent("ingester started to handle GetStreamRates")
+	defer sp.AddEvent("ingester finished handling GetStreamRates")
 
 	// Set profiling tags
 	defer pprof.SetGoroutineLabels(ctx)
@@ -1018,7 +1043,7 @@ func (i *Ingester) GetOrCreateInstance(instanceID string) (*instance, error) { /
 	inst, ok = i.instances[instanceID]
 	if !ok {
 		var err error
-		inst, err = newInstance(&i.cfg, i.periodicConfigs, instanceID, i.limiter, i.tenantConfigs, i.wal, i.metrics, i.flushOnShutdownSwitch, i.chunkFilter, i.pipelineWrapper, i.extractorWrapper, i.streamRateCalculator, i.writeLogManager, i.customStreamsTracker)
+		inst, err = newInstance(&i.cfg, i.periodicConfigs, instanceID, i.limiter, i.tenantConfigs, i.wal, i.metrics, i.flushOnShutdownSwitch, i.chunkFilter, i.pipelineWrapper, i.extractorWrapper, i.streamRateCalculator, i.writeLogManager, i.customStreamsTracker, i.tenantsRetention)
 		if err != nil {
 			return nil, err
 		}
@@ -1098,7 +1123,7 @@ func (i *Ingester) QuerySample(req *logproto.SampleQueryRequest, queryServer log
 	// initialize stats collection for ingester queries.
 	_, ctx := stats.NewContext(queryServer.Context())
 	_, ctx = metadata.NewContext(ctx)
-	sp := opentracing.SpanFromContext(ctx)
+	sp := trace.SpanFromContext(ctx)
 
 	// If the plan is empty we want all series to be returned.
 	if req.Plan == nil {
@@ -1130,9 +1155,11 @@ func (i *Ingester) QuerySample(req *logproto.SampleQueryRequest, queryServer log
 	if err != nil {
 		return err
 	}
-	if sp != nil {
-		sp.LogKV("event", "finished instance query sample", "selector", req.Selector, "start", req.Start, "end", req.End)
-	}
+	sp.AddEvent("finished instance query sample", trace.WithAttributes(
+		attribute.String("selector", req.Selector),
+		attribute.String("start", req.Start.String()),
+		attribute.String("end", req.End.String()),
+	))
 
 	if start, end, ok := buildStoreRequest(i.cfg, req.Start, req.End, time.Now()); ok {
 		storeReq := logql.SelectSampleParams{SampleQueryRequest: &logproto.SampleQueryRequest{
@@ -1331,11 +1358,52 @@ func (i *Ingester) series(ctx context.Context, req *logproto.SeriesRequest) (*lo
 	if err != nil {
 		return nil, err
 	}
-	return instance.Series(ctx, req)
+
+	resp, err := instance.Series(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if start, end, ok := buildStoreRequest(i.cfg, req.Start, req.End, time.Now()); ok {
+		var storeSeries []logproto.SeriesIdentifier
+		var parsed syntax.Expr
+
+		groups := []string{""}
+		if len(req.Groups) != 0 {
+			groups = req.Groups
+		}
+
+		for _, group := range groups {
+			if group != "" {
+				parsed, err = syntax.ParseExpr(group)
+				if err != nil {
+					return nil, err
+				}
+			}
+			storeSeries, err = i.store.SelectSeries(ctx, logql.SelectLogParams{
+				QueryRequest: &logproto.QueryRequest{
+					Selector:  group,
+					Limit:     1,
+					Start:     start,
+					End:       end,
+					Direction: logproto.FORWARD,
+					Shards:    req.Shards,
+					Plan: &plan.QueryPlan{
+						AST: parsed,
+					},
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
+			resp.Series = append(resp.Series, storeSeries...)
+		}
+	}
+	return resp, nil
 }
 
 func (i *Ingester) GetStats(ctx context.Context, req *logproto.IndexStatsRequest) (*logproto.IndexStatsResponse, error) {
-	sp := opentracing.SpanFromContext(ctx)
+	sp := trace.SpanFromContext(ctx)
 
 	user, err := tenant.TenantID(ctx)
 	if err != nil {
@@ -1383,15 +1451,15 @@ func (i *Ingester) GetStats(ctx context.Context, req *logproto.IndexStatsRequest
 
 	merged := index_stats.MergeStats(resps...)
 	if sp != nil {
-		sp.LogKV(
-			"user", user,
-			"from", req.From.Time(),
-			"through", req.Through.Time(),
-			"matchers", syntax.MatchersString(matchers),
-			"streams", merged.Streams,
-			"chunks", merged.Chunks,
-			"bytes", merged.Bytes,
-			"entries", merged.Entries,
+		sp.SetAttributes(
+			attribute.String("user", user),
+			attribute.String("from", req.From.Time().String()),
+			attribute.String("through", req.Through.Time().String()),
+			attribute.String("matchers", syntax.MatchersString(matchers)),
+			attribute.Int64("streams", int64(merged.Streams)),
+			attribute.Int64("chunks", int64(merged.Chunks)),
+			attribute.Int64("bytes", int64(merged.Bytes)),
+			attribute.Int64("entries", int64(merged.Entries)),
 		)
 	}
 
@@ -1589,7 +1657,7 @@ func (i *Ingester) GetDetectedFields(_ context.Context, r *logproto.DetectedFiel
 				Cardinality: 1,
 			},
 		},
-		FieldLimit: r.GetFieldLimit(),
+		Limit: r.GetLimit(),
 	}, nil
 }
 

@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
 
-	configv1 "github.com/grafana/loki/operator/apis/config/v1"
-	lokiv1 "github.com/grafana/loki/operator/apis/loki/v1"
+	configv1 "github.com/grafana/loki/operator/api/config/v1"
+	lokiv1 "github.com/grafana/loki/operator/api/loki/v1"
 	"github.com/grafana/loki/operator/internal/manifests/storage"
 )
 
@@ -64,6 +64,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -96,6 +97,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: true
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -114,6 +117,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -124,6 +128,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -258,6 +263,7 @@ overrides:
 		},
 		Shippers:              []string{"boltdb"},
 		EnableRemoteReporting: true,
+		DiscoverLogLevels:     true,
 		HTTPTimeouts: HTTPTimeoutConfig{
 			IdleTimeout:  30 * time.Second,
 			ReadTimeout:  30 * time.Second,
@@ -321,6 +327,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -353,6 +360,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -371,6 +380,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -381,6 +391,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -747,6 +758,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -779,6 +791,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -797,6 +811,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -807,6 +822,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -1105,6 +1121,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -1137,6 +1154,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -1155,6 +1174,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -1165,6 +1185,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -1464,6 +1485,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -1496,6 +1518,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -1514,6 +1538,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -1524,6 +1549,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -1857,6 +1883,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -1889,6 +1916,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -1912,6 +1941,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -1922,6 +1952,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -2192,6 +2223,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -2224,6 +2256,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -2242,6 +2276,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -2252,6 +2287,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -2624,6 +2660,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -2663,6 +2700,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -2681,6 +2720,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -2691,6 +2731,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -2955,6 +2996,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -2987,6 +3029,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -3005,6 +3049,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -3015,6 +3060,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -3452,6 +3498,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -3484,6 +3531,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -3502,6 +3551,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -3513,6 +3563,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -3713,6 +3764,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -3745,6 +3797,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -3763,6 +3817,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -3774,6 +3829,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -3975,6 +4031,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -4007,6 +4064,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -4025,6 +4084,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -4035,6 +4095,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -4238,6 +4299,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -4270,6 +4332,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -4288,6 +4352,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -4298,6 +4363,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -4537,6 +4603,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -4569,6 +4636,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -4587,6 +4656,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -4597,6 +4667,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -4834,6 +4905,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -4866,6 +4938,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -4891,6 +4965,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -5332,6 +5407,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -5364,6 +5440,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -5389,6 +5467,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -5508,6 +5587,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -5540,6 +5620,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -5565,6 +5647,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -5677,6 +5760,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -5709,6 +5793,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -5727,6 +5813,7 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: false
 memberlist:
   abort_if_cluster_join_fails: true
@@ -5737,6 +5824,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -6043,9 +6131,7 @@ compactor:
   working_directory: /tmp/loki/compactor
 distributor:
   otlp_config:
-    default_resource_attributes_as_index_labels:
-    - foo.bar
-    - bar.baz
+    default_resource_attributes_as_index_labels: []
 frontend:
   tail_proxy_url: http://loki-querier-http-lokistack-dev.default.svc.cluster.local:3100
   compress_responses: true
@@ -6069,6 +6155,7 @@ ingester:
     ring:
       replication_factor: 1
   max_chunk_age: 2h
+  autoforget_unhealthy: true
   wal:
     enabled: true
     dir: /tmp/wal
@@ -6101,6 +6188,8 @@ limits_config:
   max_streams_per_user: 0
   max_line_size: 256000
   max_entries_limit_per_query: 5000
+  discover_service_name: []
+  discover_log_levels: false
   max_global_streams_per_user: 0
   max_chunks_per_query: 2000000
   max_query_length: 721h
@@ -6119,40 +6208,28 @@ limits_config:
   shard_streams:
     enabled: true
     desired_rate: 3MB
+    time_sharding_enabled: true
   allow_structured_metadata: true
   otlp_config:
     resource_attributes:
-      ignore_defaults: true
       attributes_config:
       - action: index_label
         attributes:
         - res.foo.bar
         - res.bar.baz
-        regex: .*
-      - action: structured_metadata
+      - action: drop
         attributes:
         - res.service.env
-        regex: .*
     scope_attributes:
-    - action: index_label
+    - action: drop
       attributes:
       - scope.foo.bar
       - scope.bar.baz
-      regex: .*
-    - action: structured_metadata
-      attributes:
-      - scope.service.env
-      regex: .*
     log_attributes:
-    - action: index_label
+    - action: drop
       attributes:
       - log.foo.bar
       - log.bar.baz
-      regex: .*
-    - action: structured_metadata
-      attributes:
-      - log.service.env
-      regex: .*
 memberlist:
   abort_if_cluster_join_fails: true
   advertise_port: 7946
@@ -6162,6 +6239,7 @@ memberlist:
   max_join_backoff: 1m
   max_join_retries: 10
   min_join_backoff: 1s
+  rejoin_interval: 90s
 querier:
   engine:
     max_look_back_period: 30s
@@ -6284,37 +6362,24 @@ overrides:
   test-a:
     otlp_config:
       resource_attributes:
-        ignore_defaults: true
         attributes_config:
         - action: index_label
           attributes:
           - res.foo.bar
           - res.bar.baz
-          regex: .*
-        - action: structured_metadata
+        - action: drop
           attributes:
           - res.service.env
-          regex: .*
       scope_attributes:
-      - action: index_label
+      - action: drop
         attributes:
         - scope.foo.bar
         - scope.bar.baz
-        regex: .*
-      - action: structured_metadata
-        attributes:
-        - scope.service.env
-        regex: .*
       log_attributes:
-      - action: index_label
+      - action: drop
         attributes:
         - log.foo.bar
         - log.bar.baz
-        regex: .*
-      - action: structured_metadata
-        attributes:
-        - log.service.env
-        regex: .*
 `
 	opts := Options{
 		Stack: lokiv1.LokiStackSpec{
@@ -6334,68 +6399,6 @@ overrides:
 						PerStreamRateLimit:        5,
 						PerStreamRateLimitBurst:   15,
 						PerStreamDesiredRate:      3,
-					},
-					OTLP: &lokiv1.GlobalOTLPSpec{
-						IndexedResourceAttributes: []string{
-							"foo.bar",
-							"bar.baz",
-						},
-						OTLPSpec: lokiv1.OTLPSpec{
-							ResourceAttributes: &lokiv1.OTLPResourceAttributesSpec{
-								IgnoreDefaults: true,
-								Attributes: []lokiv1.OTLPResourceAttributesConfigSpec{
-									{
-										Action: lokiv1.OTLPAttributeActionIndexLabel,
-										Attributes: []string{
-											"res.foo.bar",
-											"res.bar.baz",
-										},
-										Regex: ".*",
-									},
-									{
-										Action: lokiv1.OTLPAttributeActionStructuredMetadata,
-										Attributes: []string{
-											"res.service.env",
-										},
-										Regex: ".*",
-									},
-								},
-							},
-							ScopeAttributes: []lokiv1.OTLPAttributesSpec{
-								{
-									Action: lokiv1.OTLPAttributeActionIndexLabel,
-									Attributes: []string{
-										"scope.foo.bar",
-										"scope.bar.baz",
-									},
-									Regex: ".*",
-								},
-								{
-									Action: lokiv1.OTLPAttributeActionStructuredMetadata,
-									Attributes: []string{
-										"scope.service.env",
-									},
-									Regex: ".*",
-								},
-							},
-							LogAttributes: []lokiv1.OTLPAttributesSpec{
-								{
-									Action: lokiv1.OTLPAttributeActionIndexLabel,
-									Attributes: []string{
-										"log.foo.bar",
-										"log.bar.baz",
-									},
-									Regex: ".*",
-								},
-								{
-									Action: lokiv1.OTLPAttributeActionStructuredMetadata,
-									Attributes: []string{
-										"log.service.env",
-									},
-									Regex: ".*",
-								},
-							},
-						},
 					},
 					QueryLimits: &lokiv1.QueryLimitSpec{
 						MaxEntriesLimitPerQuery: 5000,
@@ -6532,58 +6535,81 @@ overrides:
 			"test-a": {
 				Limits: lokiv1.PerTenantLimitsTemplateSpec{
 					OTLP: &lokiv1.OTLPSpec{
-						ResourceAttributes: &lokiv1.OTLPResourceAttributesSpec{
-							IgnoreDefaults: true,
-							Attributes: []lokiv1.OTLPResourceAttributesConfigSpec{
-								{
-									Action: lokiv1.OTLPAttributeActionIndexLabel,
-									Attributes: []string{
-										"res.foo.bar",
-										"res.bar.baz",
-									},
-									Regex: ".*",
-								},
-								{
-									Action: lokiv1.OTLPAttributeActionStructuredMetadata,
-									Attributes: []string{
-										"res.service.env",
-									},
-									Regex: ".*",
-								},
+						// This part of the spec is not actually used in this step.
+						// It has already been pre-processed into the OTLPAttributes below.
+					},
+				},
+			},
+		},
+		OTLPAttributes: OTLPAttributeConfig{
+			RemoveDefaultLabels: true,
+			Global: &OTLPTenantAttributeConfig{
+				ResourceAttributes: []OTLPAttribute{
+					{
+						Action: OTLPAttributeActionStreamLabel,
+						Names: []string{
+							"res.foo.bar",
+							"res.bar.baz",
+						},
+					},
+					{
+						Action: OTLPAttributeActionDrop,
+						Names: []string{
+							"res.service.env",
+						},
+					},
+				},
+				ScopeAttributes: []OTLPAttribute{
+					{
+						Action: OTLPAttributeActionDrop,
+						Names: []string{
+							"scope.foo.bar",
+							"scope.bar.baz",
+						},
+					},
+				},
+				LogAttributes: []OTLPAttribute{
+					{
+						Action: OTLPAttributeActionDrop,
+						Names: []string{
+							"log.foo.bar",
+							"log.bar.baz",
+						},
+					},
+				},
+			},
+			Tenants: map[string]*OTLPTenantAttributeConfig{
+				"test-a": {
+					ResourceAttributes: []OTLPAttribute{
+						{
+							Action: OTLPAttributeActionStreamLabel,
+							Names: []string{
+								"res.foo.bar",
+								"res.bar.baz",
 							},
 						},
-						ScopeAttributes: []lokiv1.OTLPAttributesSpec{
-							{
-								Action: lokiv1.OTLPAttributeActionIndexLabel,
-								Attributes: []string{
-									"scope.foo.bar",
-									"scope.bar.baz",
-								},
-								Regex: ".*",
-							},
-							{
-								Action: lokiv1.OTLPAttributeActionStructuredMetadata,
-								Attributes: []string{
-									"scope.service.env",
-								},
-								Regex: ".*",
+						{
+							Action: OTLPAttributeActionDrop,
+							Names: []string{
+								"res.service.env",
 							},
 						},
-						LogAttributes: []lokiv1.OTLPAttributesSpec{
-							{
-								Action: lokiv1.OTLPAttributeActionIndexLabel,
-								Attributes: []string{
-									"log.foo.bar",
-									"log.bar.baz",
-								},
-								Regex: ".*",
+					},
+					ScopeAttributes: []OTLPAttribute{
+						{
+							Action: OTLPAttributeActionDrop,
+							Names: []string{
+								"scope.foo.bar",
+								"scope.bar.baz",
 							},
-							{
-								Action: lokiv1.OTLPAttributeActionStructuredMetadata,
-								Attributes: []string{
-									"log.service.env",
-								},
-								Regex: ".*",
+						},
+					},
+					LogAttributes: []OTLPAttribute{
+						{
+							Action: OTLPAttributeActionDrop,
+							Names: []string{
+								"log.foo.bar",
+								"log.bar.baz",
 							},
 						},
 					},

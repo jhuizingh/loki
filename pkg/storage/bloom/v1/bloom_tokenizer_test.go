@@ -25,6 +25,7 @@ import (
 	"github.com/grafana/loki/v3/pkg/storage/bloom/v1/filter"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/prometheus/model/labels"
 )
 
 var metrics = NewMetrics(prometheus.DefaultRegisterer)
@@ -38,7 +39,7 @@ func TestTokenizerPopulate(t *testing.T) {
 		{Name: "pod", Value: "loki-1"},
 		{Name: "trace_id", Value: "3bef3c91643bde73"},
 	}
-	memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.EncSnappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
+	memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.Snappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
 	_, _ = memChunk.Append(&push.Entry{
 		Timestamp:          time.Unix(0, 1),
 		Line:               testLine,
@@ -49,7 +50,7 @@ func TestTokenizerPopulate(t *testing.T) {
 		time.Unix(0, 0), // TODO: Parameterize/better handle the timestamps?
 		time.Unix(0, math.MaxInt64),
 		logproto.FORWARD,
-		log.NewNoopPipeline().ForStream(nil),
+		log.NewNoopPipeline().ForStream(labels.EmptyLabels()),
 	)
 	require.Nil(t, err)
 
@@ -83,7 +84,7 @@ func TestBloomTokenizerPopulateWithoutPreexistingBloom(t *testing.T) {
 		{Name: "pod", Value: "loki-1"},
 		{Name: "trace_id", Value: "3bef3c91643bde73"},
 	}
-	memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.EncSnappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
+	memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.Snappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
 	_, _ = memChunk.Append(&push.Entry{
 		Timestamp:          time.Unix(0, 1),
 		Line:               testLine,
@@ -94,7 +95,7 @@ func TestBloomTokenizerPopulateWithoutPreexistingBloom(t *testing.T) {
 		time.Unix(0, 0), // TODO: Parameterize/better handle the timestamps?
 		time.Unix(0, math.MaxInt64),
 		logproto.FORWARD,
-		log.NewNoopPipeline().ForStream(nil),
+		log.NewNoopPipeline().ForStream(labels.EmptyLabels()),
 	)
 	require.Nil(t, err)
 
@@ -120,7 +121,7 @@ func TestBloomTokenizerPopulateWithoutPreexistingBloom(t *testing.T) {
 }
 
 func chunkRefItrFromMetadata(metadata ...push.LabelsAdapter) (iter.EntryIterator, error) {
-	memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.EncSnappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
+	memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.Snappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
 	for i, md := range metadata {
 		if _, err := memChunk.Append(&push.Entry{
 			Timestamp:          time.Unix(0, int64(i)),
@@ -136,7 +137,7 @@ func chunkRefItrFromMetadata(metadata ...push.LabelsAdapter) (iter.EntryIterator
 		time.Unix(0, 0), // TODO: Parameterize/better handle the timestamps?
 		time.Unix(0, math.MaxInt64),
 		logproto.FORWARD,
-		log.NewNoopPipeline().ForStream(nil),
+		log.NewNoopPipeline().ForStream(labels.EmptyLabels()),
 	)
 	return itr, err
 }
@@ -173,7 +174,7 @@ func TestTokenizerPopulateWontExceedMaxSize(t *testing.T) {
 	var ct int
 	for created := range ch {
 		ct++
-		capacity := created.Bloom.ScalableBloomFilter.Capacity() / 8
+		capacity := created.Bloom.Capacity() / 8
 		t.Log(ct, int(capacity), maxSize)
 		require.Less(t, int(capacity), maxSize)
 	}
@@ -205,7 +206,7 @@ func BenchmarkPopulateSeriesWithBloom(b *testing.B) {
 
 		sbf := filter.NewScalableBloomFilter(1024, 0.01, 0.8)
 
-		memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.EncSnappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
+		memChunk := chunkenc.NewMemChunk(chunkenc.ChunkFormatV4, compression.Snappy, chunkenc.ChunkHeadFormatFor(chunkenc.ChunkFormatV4), 256000, 1500000)
 		_, _ = memChunk.Append(&push.Entry{
 			Timestamp: time.Unix(0, 1),
 			Line:      "",
@@ -219,7 +220,7 @@ func BenchmarkPopulateSeriesWithBloom(b *testing.B) {
 			time.Unix(0, 0), // TODO: Parameterize/better handle the timestamps?
 			time.Unix(0, math.MaxInt64),
 			logproto.FORWARD,
-			log.NewNoopPipeline().ForStream(nil),
+			log.NewNoopPipeline().ForStream(labels.EmptyLabels()),
 		)
 		require.Nil(b, err)
 

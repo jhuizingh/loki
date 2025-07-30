@@ -95,8 +95,6 @@ func Test_ProxyEndpoint_waitBackendResponseForDownstream(t *testing.T) {
 	}
 
 	for testName, testData := range tests {
-		testData := testData
-
 		t.Run(testName, func(t *testing.T) {
 			endpoint := NewProxyEndpoint(testData.backends, "test", NewProxyMetrics(nil), log.NewNopLogger(), nil, false)
 
@@ -423,6 +421,6 @@ func Test_backendResponse_statusCode(t *testing.T) {
 
 type mockComparator struct{}
 
-func (c *mockComparator) Compare(_, _ []byte) (*ComparisonSummary, error) {
+func (c *mockComparator) Compare(_, _ []byte, _ time.Time) (*ComparisonSummary, error) {
 	return &ComparisonSummary{missingMetrics: 12}, nil
 }

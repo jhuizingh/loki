@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 
 	"github.com/grafana/loki/v3/pkg/loghttp"
 	"github.com/grafana/loki/v3/pkg/logproto"
-	"github.com/grafana/loki/v3/pkg/logql/log"
 	logql_log "github.com/grafana/loki/v3/pkg/logql/log"
 	"github.com/grafana/loki/v3/pkg/logql/syntax"
 	"github.com/grafana/loki/v3/pkg/logqlmodel"
@@ -24,7 +24,7 @@ import (
 	"github.com/grafana/loki/pkg/push"
 )
 
-func Test_parseDetectedFeilds(t *testing.T) {
+func Test_parseDetectedFields(t *testing.T) {
 	now := time.Now()
 
 	t.Run("when no parsers are supplied", func(t *testing.T) {
@@ -60,7 +60,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 		rulerStream := push.Stream{
 			Labels:  rulerLbls,
 			Entries: rulerLines,
-			Hash:    rulerMetric.Hash(),
+			Hash:    labels.StableHash(rulerMetric),
 		}
 
 		debugDetectedFieldMetadata := []push.LabelAdapter{
@@ -95,7 +95,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 		nginxStream := push.Stream{
 			Labels:  nginxLbls,
 			Entries: nginxJSONLines,
-			Hash:    nginxMetric.Hash(),
+			Hash:    labels.StableHash(nginxMetric),
 		}
 
 		t.Run("detects logfmt fields", func(t *testing.T) {
@@ -191,7 +191,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 			rulerStream := push.Stream{
 				Labels:  rulerLbls,
 				Entries: rulerLines,
-				Hash:    rulerMetric.Hash(),
+				Hash:    labels.StableHash(rulerMetric),
 			}
 
 			df := parseDetectedFields(uint32(15), logqlmodel.Streams([]push.Stream{rulerStream}))
@@ -220,7 +220,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 			rulerStream := push.Stream{
 				Labels:  rulerLbls,
 				Entries: rulerLines,
-				Hash:    rulerMetric.Hash(),
+				Hash:    labels.StableHash(rulerMetric),
 			}
 
 			nginxLbls := `{ cluster="eu-west-1", level="debug", namespace="gateway", pod="nginx-json-oghco", service_name="nginx-json", host="localhost"}`
@@ -230,7 +230,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 			nginxStream := push.Stream{
 				Labels:  nginxLbls,
 				Entries: nginxJSONLines,
-				Hash:    nginxMetric.Hash(),
+				Hash:    labels.StableHash(nginxMetric),
 			}
 
 			df := parseDetectedFields(
@@ -322,7 +322,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 		)
 
 		rulerStreams := []push.Stream{}
-		streamLbls := logql_log.NewBaseLabelsBuilder().ForLabels(rulerLbls, rulerLbls.Hash())
+		streamLbls := logql_log.NewBaseLabelsBuilder().ForLabels(rulerLbls, labels.StableHash(rulerLbls))
 
 		for _, rulerFields := range [][]push.LabelAdapter{
 			parsedRulerFields(
@@ -354,7 +354,10 @@ func Test_parseDetectedFeilds(t *testing.T) {
 					duration = field
 				}
 
-				streamLbls.Add(log.ParsedLabel, labels.Label{Name: field.Name, Value: field.Value})
+				streamLbls.Add(
+					logql_log.ParsedLabel,
+					labels.FromStrings(field.Name, field.Value),
+				)
 			}
 
 			rulerStreams = append(rulerStreams, push.Stream{
@@ -432,7 +435,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 		)
 
 		nginxStreams := []push.Stream{}
-		nginxStreamLbls := logql_log.NewBaseLabelsBuilder().ForLabels(nginxLbls, nginxLbls.Hash())
+		nginxStreamLbls := logql_log.NewBaseLabelsBuilder().ForLabels(nginxLbls, labels.StableHash(nginxLbls))
 
 		for _, nginxFields := range [][]push.LabelAdapter{
 			parsedNginxFields(
@@ -495,8 +498,8 @@ func Test_parseDetectedFeilds(t *testing.T) {
 				}
 
 				nginxStreamLbls.Add(
-					log.ParsedLabel,
-					labels.Label{Name: field.Name, Value: field.Value},
+					logql_log.ParsedLabel,
+					labels.FromStrings(field.Name, field.Value),
 				)
 			}
 
@@ -655,7 +658,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 						},
 					},
 				},
-				Hash: rulerMetric.Hash(),
+				Hash: labels.StableHash(rulerMetric),
 			}
 
 			df := parseDetectedFields(uint32(15), logqlmodel.Streams([]push.Stream{rulerStream}))
@@ -720,7 +723,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 						},
 					},
 				},
-				Hash: rulerMetric.Hash(),
+				Hash: labels.StableHash(rulerMetric),
 			}
 
 			nginxLbls := `{ cluster="eu-west-1", level="debug", namespace="gateway", pod="nginx-json-oghco", service_name="nginx-json", host="localhost"}`
@@ -774,7 +777,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 						},
 					},
 				},
-				Hash: nginxMetric.Hash(),
+				Hash: labels.StableHash(nginxMetric),
 			}
 
 			df := parseDetectedFields(
@@ -842,7 +845,7 @@ func Test_parseDetectedFeilds(t *testing.T) {
 					},
 				},
 			},
-			Hash: rulerMetric.Hash(),
+			Hash: labels.StableHash(rulerMetric),
 		}
 
 		df := parseDetectedFields(
@@ -868,7 +871,7 @@ func mockLogfmtStreamWithLabels(_ int, quantity int, lbls string) logproto.Strea
 		streamLabels = labels.EmptyLabels()
 	}
 
-	lblBuilder := logql_log.NewBaseLabelsBuilder().ForLabels(streamLabels, streamLabels.Hash())
+	lblBuilder := logql_log.NewBaseLabelsBuilder().ForLabels(streamLabels, labels.StableHash(streamLabels))
 	logFmtParser := logql_log.NewLogfmtParser(false, false)
 
 	// used for detected fields queries which are always BACKWARD
@@ -925,7 +928,7 @@ func mockLogfmtStreamWithLabelsAndStructuredMetadata(
 		streamLabels = labels.EmptyLabels()
 	}
 
-	lblBuilder := logql_log.NewBaseLabelsBuilder().ForLabels(streamLabels, streamLabels.Hash())
+	lblBuilder := logql_log.NewBaseLabelsBuilder().ForLabels(streamLabels, labels.StableHash(streamLabels))
 	logFmtParser := logql_log.NewLogfmtParser(false, false)
 
 	// used for detected fields queries which are always BACKWARD
@@ -958,6 +961,39 @@ func mockLogfmtStreamWithLabelsAndStructuredMetadata(
 	}
 }
 
+func limitedHandler(stream logproto.Stream) base.Handler {
+	return base.HandlerFunc(
+		func(_ context.Context, _ base.Request) (base.Response, error) {
+			return &LokiResponse{
+				Status: "success",
+				Data: LokiData{
+					ResultType: loghttp.ResultTypeStream,
+					Result: []logproto.Stream{
+						stream,
+					},
+				},
+				Direction: logproto.BACKWARD,
+			}, nil
+		})
+}
+
+func logHandler(stream logproto.Stream) base.Handler {
+	return base.HandlerFunc(
+		func(_ context.Context, _ base.Request) (base.Response, error) {
+			return &LokiResponse{
+				Status: "success",
+				Data: LokiData{
+					ResultType: loghttp.ResultTypeStream,
+					Result: []logproto.Stream{
+						stream,
+					},
+				},
+				Direction: logproto.BACKWARD,
+			}, nil
+		})
+}
+
+// TODO(twhitney): Is this releated to the now deprecated Querier endpoint?
 func TestQuerier_DetectedFields(t *testing.T) {
 	limits := fakeLimits{
 		maxSeries:               math.MaxInt32,
@@ -967,50 +1003,18 @@ func TestQuerier_DetectedFields(t *testing.T) {
 		maxQuerierBytesRead:     100,
 	}
 
-	limitedHandler := func(stream logproto.Stream) base.Handler {
-		return base.HandlerFunc(
-			func(ctx context.Context, req base.Request) (base.Response, error) {
-				return &LokiResponse{
-					Status: "success",
-					Data: LokiData{
-						ResultType: loghttp.ResultTypeStream,
-						Result: []logproto.Stream{
-							stream,
-						},
-					},
-					Direction: logproto.BACKWARD,
-				}, nil
-			})
-	}
-
-	logHandler := func(stream logproto.Stream) base.Handler {
-		return base.HandlerFunc(
-			func(ctx context.Context, req base.Request) (base.Response, error) {
-				return &LokiResponse{
-					Status: "success",
-					Data: LokiData{
-						ResultType: loghttp.ResultTypeStream,
-						Result: []logproto.Stream{
-							stream,
-						},
-					},
-					Direction: logproto.BACKWARD,
-				}, nil
-			})
-	}
-
 	request := DetectedFieldsRequest{
 		logproto.DetectedFieldsRequest{
-			Start:      time.Now().Add(-1 * time.Minute),
-			End:        time.Now(),
-			Query:      `{type="test"} | logfmt | json`,
-			LineLimit:  1000,
-			FieldLimit: 1000,
+			Start:     time.Now().Add(-1 * time.Minute),
+			End:       time.Now(),
+			Query:     `{type="test"} | logfmt | json`,
+			LineLimit: 1000,
+			Limit:     1000,
 		},
 		"/loki/api/v1/detected_fields",
 	}
 
-	handleRequest := func(handler base.Handler, request DetectedFieldsRequest) []*logproto.DetectedField {
+	handleRequest := func(handler base.Handler, request DetectedFieldsRequest) *logproto.DetectedFieldsResponse {
 		ctx := context.Background()
 		ctx = user.InjectOrgID(ctx, "test-tenant")
 
@@ -1020,7 +1024,7 @@ func TestQuerier_DetectedFields(t *testing.T) {
 		r, ok := resp.(*DetectedFieldsResponse)
 		require.True(t, ok)
 
-		return r.Response.Fields
+		return r.Response
 	}
 
 	t.Run("returns detected fields from queried logs", func(t *testing.T) {
@@ -1028,12 +1032,9 @@ func TestQuerier_DetectedFields(t *testing.T) {
 			limitedHandler(mockLogfmtStreamWithLabels(1, 5, `{type="test", name="foo"}`)),
 			logHandler(mockLogfmtStreamWithLabels(1, 5, `{type="test", name="foo"}`)),
 			limits,
-		).Wrap(base.HandlerFunc(func(ctx context.Context, req base.Request) (base.Response, error) {
-			t.Fatal("should not be called")
-			return nil, nil
-		}))
+		)
 
-		detectedFields := handleRequest(handler, request)
+		detectedFields := handleRequest(handler, request).Fields
 		// log lines come from querier_mock_test.go
 		// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t
 		assert.Len(t, detectedFields, 8)
@@ -1055,15 +1056,16 @@ func TestQuerier_DetectedFields(t *testing.T) {
 
 	t.Run("returns detected fields with structured metadata from queried logs", func(t *testing.T) {
 		handler := NewDetectedFieldsHandler(
-			limitedHandler(mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`)),
-			logHandler(mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`)),
+			limitedHandler(
+				mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`),
+			),
+			logHandler(
+				mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`),
+			),
 			limits,
-		).Wrap(base.HandlerFunc(func(ctx context.Context, req base.Request) (base.Response, error) {
-			t.Fatal("should not be called")
-			return nil, nil
-		}))
+		)
 
-		detectedFields := handleRequest(handler, request)
+		detectedFields := handleRequest(handler, request).Fields
 		// log lines come from querier_mock_test.go
 		// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t
 		assert.Len(t, detectedFields, 10)
@@ -1090,12 +1092,9 @@ func TestQuerier_DetectedFields(t *testing.T) {
 			limitedHandler(mockLogfmtStreamWithLabels(1, 2, `{type="test", name="foo"}`)),
 			logHandler(mockLogfmtStreamWithLabels(1, 2, `{type="test", name="foo"}`)),
 			limits,
-		).Wrap(base.HandlerFunc(func(ctx context.Context, req base.Request) (base.Response, error) {
-			t.Fatal("should not be called")
-			return nil, nil
-		}))
+		)
 
-		detectedFields := handleRequest(handler, request)
+		detectedFields := handleRequest(handler, request).Fields
 		// log lines come from querier_mock_test.go
 		// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t
 		assert.Len(t, detectedFields, 8)
@@ -1136,12 +1135,9 @@ func TestQuerier_DetectedFields(t *testing.T) {
 				),
 				logHandler(mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 2, `{type="test"}`)),
 				limits,
-			).Wrap(base.HandlerFunc(func(ctx context.Context, req base.Request) (base.Response, error) {
-				t.Fatal("should not be called")
-				return nil, nil
-			}))
+			)
 
-			detectedFields := handleRequest(handler, request)
+			detectedFields := handleRequest(handler, request).Fields
 			// log lines come from querier_mock_test.go
 			// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t
 			assert.Len(t, detectedFields, 10)
@@ -1184,16 +1180,23 @@ func TestQuerier_DetectedFields(t *testing.T) {
 		func(t *testing.T) {
 			handler := NewDetectedFieldsHandler(
 				limitedHandler(
-					mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 2, `{type="test", name="bob"}`),
+					mockLogfmtStreamWithLabelsAndStructuredMetadata(
+						1,
+						2,
+						`{type="test", name="bob"}`,
+					),
 				),
-				logHandler(mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 2, `{type="test", name="bob"}`)),
+				logHandler(
+					mockLogfmtStreamWithLabelsAndStructuredMetadata(
+						1,
+						2,
+						`{type="test", name="bob"}`,
+					),
+				),
 				limits,
-			).Wrap(base.HandlerFunc(func(ctx context.Context, req base.Request) (base.Response, error) {
-				t.Fatal("should not be called")
-				return nil, nil
-			}))
+			)
 
-			detectedFields := handleRequest(handler, request)
+			detectedFields := handleRequest(handler, request).Fields
 			// log lines come from querier_mock_test.go
 			// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t
 			assert.Len(t, detectedFields, 10)
@@ -1213,48 +1216,413 @@ func TestQuerier_DetectedFields(t *testing.T) {
 			assert.Equal(t, uint64(1), nameField.Cardinality)
 		},
 	)
+
+	t.Run("returns values for a detected fields", func(t *testing.T) {
+		handler := NewDetectedFieldsHandler(
+			limitedHandler(
+				mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`),
+			),
+			logHandler(
+				mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`),
+			),
+			limits,
+		)
+
+		request := DetectedFieldsRequest{
+			logproto.DetectedFieldsRequest{
+				Start:     time.Now().Add(-1 * time.Minute),
+				End:       time.Now(),
+				Query:     `{type="test"} | logfmt | json`,
+				LineLimit: 1000,
+				Limit:     1000,
+				Values:    true,
+				Name:      "message",
+			},
+			"/loki/api/v1/detected_field/message/values",
+		}
+
+		detectedFieldValues := handleRequest(handler, request).Values
+		// log lines come from querier_mock_test.go
+		// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t
+		assert.Len(t, detectedFieldValues, 5)
+
+		slices.Sort(detectedFieldValues)
+		assert.Equal(t, []string{
+			"line 1",
+			"line 2",
+			"line 3",
+			"line 4",
+			"line 5",
+		}, detectedFieldValues)
+	})
+
+	t.Run(
+		"returns values for a detected fields, enforcing the limit and removing duplicates",
+		func(t *testing.T) {
+			handler := NewDetectedFieldsHandler(
+				limitedHandler(
+					mockLogfmtStreamWithLabelsAndStructuredMetadata(
+						1,
+						5,
+						`{type="test"}`,
+					),
+				),
+				logHandler(
+					mockLogfmtStreamWithLabelsAndStructuredMetadata(
+						1,
+						5,
+						`{type="test"}`,
+					),
+				),
+				limits,
+			)
+
+			request := DetectedFieldsRequest{
+				logproto.DetectedFieldsRequest{
+					Start:     time.Now().Add(-1 * time.Minute),
+					End:       time.Now(),
+					Query:     `{type="test"} | logfmt | json`,
+					LineLimit: 1000,
+					Limit:     3,
+					Values:    true,
+					Name:      "message",
+				},
+				"/loki/api/v1/detected_field/message/values",
+			}
+
+			detectedFieldValues := handleRequest(handler, request).Values
+			// log lines come from querier_mock_test.go
+			// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t
+			assert.Len(t, detectedFieldValues, 3)
+
+			request = DetectedFieldsRequest{
+				logproto.DetectedFieldsRequest{
+					Start:     time.Now().Add(-1 * time.Minute),
+					End:       time.Now(),
+					Query:     `{type="test"} | logfmt | json`,
+					LineLimit: 1000,
+					Limit:     3,
+					Values:    true,
+					Name:      "name",
+				},
+				"/loki/api/v1/detected_field/name/values",
+			}
+
+			secondValues := handleRequest(handler, request).Values
+			// log lines come from querier_mock_test.go
+			// message="line %d" count=%d fake=true bytes=%dMB duration=%dms percent=%f even=%t name=bar
+			assert.Len(t, secondValues, 1)
+
+			assert.Equal(t, []string{
+				"bar",
+			}, secondValues)
+		},
+	)
+
+	t.Run("correctly formats bytes values for detected fields", func(t *testing.T) {
+		lbls := `{cluster="us-east-1", namespace="mimir-dev", pod="mimir-ruler-nfb37", service_name="mimir-ruler"}`
+		metric, err := parser.ParseMetric(lbls)
+		require.NoError(t, err)
+		now := time.Now()
+
+		infoDetectdFiledMetadata := []push.LabelAdapter{
+			{
+				Name:  "detected_level",
+				Value: "info",
+			},
+		}
+
+		lines := []push.Entry{
+			{
+				Timestamp:          now,
+				Line:               "ts=2024-09-05T15:36:38.757788067Z caller=metrics.go:66 tenant=2419 level=info bytes=1024",
+				StructuredMetadata: infoDetectdFiledMetadata,
+			},
+			{
+				Timestamp:          now,
+				Line:               `ts=2024-09-05T15:36:38.698375619Z caller=grpc_logging.go:66 tenant=29 level=info bytes="1024 MB"`,
+				StructuredMetadata: infoDetectdFiledMetadata,
+			},
+			{
+				Timestamp:          now,
+				Line:               "ts=2024-09-05T15:36:38.629424175Z caller=grpc_logging.go:66 tenant=2919 level=info bytes=1024KB",
+				StructuredMetadata: infoDetectdFiledMetadata,
+			},
+		}
+		stream := push.Stream{
+			Labels:  lbls,
+			Entries: lines,
+			Hash:    labels.StableHash(metric),
+		}
+
+		handler := NewDetectedFieldsHandler(
+			limitedHandler(stream),
+			logHandler(stream),
+			limits,
+		)
+
+		request := DetectedFieldsRequest{
+			logproto.DetectedFieldsRequest{
+				Start:     time.Now().Add(-1 * time.Minute),
+				End:       time.Now(),
+				Query:     `{cluster="us-east-1"} | logfmt`,
+				LineLimit: 1000,
+				Limit:     3,
+				Values:    true,
+				Name:      "bytes",
+			},
+			"/loki/api/v1/detected_field/bytes/values",
+		}
+
+		detectedFieldValues := handleRequest(handler, request).Values
+		slices.Sort(detectedFieldValues)
+		require.Equal(t, []string{
+			"1.0GB",
+			"1.0MB",
+			"1024",
+		}, detectedFieldValues)
+
+		// does not affect other numeric values
+		request = DetectedFieldsRequest{
+			logproto.DetectedFieldsRequest{
+				Start:     time.Now().Add(-1 * time.Minute),
+				End:       time.Now(),
+				Query:     `{cluster="us-east-1"} | logfmt`,
+				LineLimit: 1000,
+				Limit:     3,
+				Values:    true,
+				Name:      "tenant",
+			},
+			"/loki/api/v1/detected_field/tenant/values",
+		}
+
+		detectedFieldValues = handleRequest(handler, request).Values
+		slices.Sort(detectedFieldValues)
+		require.Equal(t, []string{
+			"2419",
+			"29",
+			"2919",
+		}, detectedFieldValues)
+	})
 }
 
-// func BenchmarkQuerierDetectedFields(b *testing.B) {
-// 	limits, _ := validation.NewOverrides(defaultLimitsTestConfig(), nil)
-// 	ctx := user.InjectOrgID(context.Background(), "test")
+func BenchmarkQuerierDetectedFields(b *testing.B) {
+	limits := fakeLimits{
+		maxSeries:               math.MaxInt32,
+		maxQueryParallelism:     1,
+		tsdbMaxQueryParallelism: 1,
+		maxQueryBytesRead:       1000,
+		maxQuerierBytesRead:     100,
+	}
 
-// 	conf := mockQuerierConfig()
-// 	conf.IngesterQueryStoreMaxLookback = 0
+	request := logproto.DetectedFieldsRequest{
+		Start:     time.Now().Add(-1 * time.Minute),
+		End:       time.Now(),
+		Query:     `{type="test"}`,
+		LineLimit: 1000,
+		Limit:     1000,
+	}
 
-// 	request := logproto.DetectedFieldsRequest{
-// 		Start:      time.Now().Add(-1 * time.Minute),
-// 		End:        time.Now(),
-// 		Query:      `{type="test"}`,
-// 		LineLimit:  1000,
-// 		FieldLimit: 1000,
-// 	}
+	b.ReportAllocs()
+	b.ResetTimer()
 
-// 	store := newStoreMock()
-// 	store.On("SelectLogs", mock.Anything, mock.Anything).
-// 		Return(mockLogfmtStreamIterator(1, 2), nil)
+	handler := NewDetectedFieldsHandler(
+		limitedHandler(
+			mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`),
+		),
+		logHandler(
+			mockLogfmtStreamWithLabelsAndStructuredMetadata(1, 5, `{type="test", name="bob"}`),
+		),
+		limits,
+	)
 
-// 	queryClient := newQueryClientMock()
-// 	queryClient.On("Recv").
-// 		Return(mockQueryResponse([]logproto.Stream{mockLogfmtStream(1, 2)}), nil)
+	for i := 0; i < b.N; i++ {
+		ctx := context.Background()
+		ctx = user.InjectOrgID(ctx, "test-tenant")
 
-// 	ingesterClient := newQuerierClientMock()
-// 	ingesterClient.On("Query", mock.Anything, mock.Anything, mock.Anything).
-// 		Return(queryClient, nil)
+		resp, err := handler.Do(ctx, &request)
+		assert.NoError(b, err)
 
-// 	querier, _ := newQuerier(
-// 		conf,
-// 		mockIngesterClientConfig(),
-// 		newIngesterClientMockFactory(ingesterClient),
-// 		mockReadRingWithOneActiveIngester(),
-// 		&mockDeleteGettter{},
-// 		store, limits)
+		_, ok := resp.(*DetectedFieldsResponse)
+		require.True(b, ok)
+	}
+}
 
-// 	b.ReportAllocs()
-// 	b.ResetTimer()
+func TestNestedJSONFieldDetection(t *testing.T) {
+	t.Run("correctly detects nested JSON fields", func(t *testing.T) {
+		now := time.Now()
 
-// 	for i := 0; i < b.N; i++ {
-// 		_, err := querier.DetectedFields(ctx, &request)
-// 		assert.NoError(b, err)
-// 	}
-// }
+		nestedJSONLines := []push.Entry{
+			{
+				Timestamp: now,
+				Line: `{
+        "user":{
+          "id":123,
+          "name":"alice",
+          "settings":{
+            "theme":"dark",
+            "notifications":true
+          }
+        },
+        "app":{
+          "version":"1.0",
+          "metrics":{
+            "cpu":45.6,
+            "memory":"1.5GB"
+          }
+        }
+      }`,
+				StructuredMetadata: []push.LabelAdapter{},
+			},
+			{
+				Timestamp: now,
+				Line: `{
+        "user":{
+          "id":456,
+          "name":"bob",
+          "settings":{
+            "theme":"light",
+            "notifications":false
+          }
+        },
+        "app":{
+          "version":"1.0",
+          "metrics":{
+            "cpu":32.1,
+            "memory":"2.0GB"
+          }
+        }
+      }`,
+				StructuredMetadata: []push.LabelAdapter{},
+			},
+		}
+
+		nestedJSONLbls := `{cluster="test-cluster", job="json-test"}`
+		nestedJSONMetric, err := parser.ParseMetric(nestedJSONLbls)
+		require.NoError(t, err)
+
+		nestedJSONStream := push.Stream{
+			Labels:  nestedJSONLbls,
+			Entries: nestedJSONLines,
+			Hash:    labels.StableHash(nestedJSONMetric),
+		}
+
+		df := parseDetectedFields(uint32(20), logqlmodel.Streams([]push.Stream{nestedJSONStream}))
+
+		// Test for nested fields
+		expectedNestedFieldTypes := map[string]logproto.DetectedFieldType{
+			"user_id":                     logproto.DetectedFieldInt,
+			"user_name":                   logproto.DetectedFieldString,
+			"user_settings_theme":         logproto.DetectedFieldString,
+			"user_settings_notifications": logproto.DetectedFieldBoolean,
+			"app_version":                 logproto.DetectedFieldFloat,
+			"app_metrics_cpu":             logproto.DetectedFieldFloat,
+			"app_metrics_memory":          logproto.DetectedFieldBytes,
+		}
+
+		expectFieldsToPaths := map[string][]string{
+			"user_id":                     {"user", "id"},
+			"user_name":                   {"user", "name"},
+			"user_settings_theme":         {"user", "settings", "theme"},
+			"user_settings_notifications": {"user", "settings", "notifications"},
+			"app_version":                 {"app", "version"},
+			"app_metrics_cpu":             {"app", "metrics", "cpu"},
+			"app_metrics_memory":          {"app", "metrics", "memory"},
+		}
+
+		for field, expectedType := range expectedNestedFieldTypes {
+			require.Contains(t, df, field, "Missing expected nested field: %s", field)
+			require.Equal(t, expectedType, df[field].fieldType, "Wrong type for field %s", field)
+		}
+
+		for field, expectedPath := range expectFieldsToPaths {
+			require.Contains(t, df, field, "Missing expected nested field: %s", field)
+			require.Equal(t, expectedPath, df[field].jsonPath, "Wrong json path for field %s", field)
+		}
+	})
+
+	t.Run("correctly detects sanitized JSON fields, including difficult keys", func(t *testing.T) {
+		now := time.Now()
+
+		nestedJSONLines := []push.Entry{
+			{
+				Timestamp: now,
+				Line: `{
+        "user":{
+          "id":123,
+          "name":"alice",
+          "settings":{
+            "theme":"dark",
+            "notifications":true,
+          }
+        },
+        "app-id": "abc",
+			  "app_name": "foo",
+        "app": {
+          "terrible/key/name": "four",
+        },
+        "other.bad.key.name": "three",
+        "key with spaces": "space",
+        "nested key with spaces": {
+          "nest": "thermostat",
+        }
+      }`,
+				StructuredMetadata: []push.LabelAdapter{},
+			},
+			{
+				Timestamp: now,
+				Line: `{
+        "user":{
+          "id":456,
+          "name":"bob",
+          "settings":{
+            "theme":"light",
+            "notifications":false
+          },
+        },
+        "app-id": "xyz",
+			  "app_name": "bar",
+        "app": {
+          "terrible/key/name": "four",
+        },
+        "other.bad.key.name": "five",
+        "key with spaces": "blank",
+        "nested key with spaces": {
+          "nest": "protect",
+        }
+      }`,
+				StructuredMetadata: []push.LabelAdapter{},
+			},
+		}
+
+		nestedJSONLbls := `{cluster="test-cluster", job="json-test"}`
+		nestedJSONMetric, err := parser.ParseMetric(nestedJSONLbls)
+		require.NoError(t, err)
+
+		nestedJSONStream := push.Stream{
+			Labels:  nestedJSONLbls,
+			Entries: nestedJSONLines,
+			Hash:    labels.StableHash(nestedJSONMetric),
+		}
+
+		df := parseDetectedFields(uint32(20), logqlmodel.Streams([]push.Stream{nestedJSONStream}))
+
+		expectFieldsToPaths := map[string][]string{
+			"user_id":                     {"user", "id"},
+			"user_name":                   {"user", "name"},
+			"user_settings_theme":         {"user", "settings", "theme"},
+			"user_settings_notifications": {"user", "settings", "notifications"},
+			"app_id":                      {"app-id"},
+			"app_name":                    {"app_name"},
+			"app_terrible_key_name":       {"app", "terrible/key/name"},
+			"other_bad_key_name":          {"other.bad.key.name"},
+			"key_with_spaces":             {"key with spaces"},
+			"nested_key_with_spaces_nest": {"nested key with spaces", "nest"},
+		}
+
+		for field, expectedPath := range expectFieldsToPaths {
+			require.Contains(t, df, field, "Missing expected nested field: %s", field)
+			require.Equal(t, expectedPath, df[field].jsonPath, "Wrong json path for field %s", field)
+		}
+	})
+}

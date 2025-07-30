@@ -13,9 +13,10 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/grafana/dskit/concurrency"
-	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/model"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/grafana/loki/v3/pkg/compression"
 	v1 "github.com/grafana/loki/v3/pkg/storage/bloom/v1"
@@ -73,7 +74,7 @@ func (r Ref) Interval() Interval {
 
 type BlockRef struct {
 	Ref
-	compression.Encoding
+	compression.Codec
 }
 
 func (r BlockRef) String() string {
@@ -220,18 +221,21 @@ func newRefFrom(tenant, table string, md v1.BlockMetadata) Ref {
 	}
 }
 
-func newBlockRefWithEncoding(ref Ref, enc compression.Encoding) BlockRef {
-	return BlockRef{Ref: ref, Encoding: enc}
+func newBlockRefWithEncoding(ref Ref, enc compression.Codec) BlockRef {
+	return BlockRef{Ref: ref, Codec: enc}
 }
 
-func BlockFrom(enc compression.Encoding, tenant, table string, blk *v1.Block) (Block, error) {
-	md, _ := blk.Metadata()
+func BlockFrom(enc compression.Codec, tenant, table string, blk *v1.Block) (Block, error) {
+	md, err := blk.Metadata()
+	if err != nil {
+		return Block{}, errors.Wrap(err, "decoding index")
+	}
+
 	ref := newBlockRefWithEncoding(newRefFrom(tenant, table, md), enc)
 
 	// TODO(owen-d): pool
 	buf := bytes.NewBuffer(nil)
-	err := v1.TarCompress(ref.Encoding, buf, blk.Reader())
-
+	err = v1.TarCompress(ref.Codec, buf, blk.Reader())
 	if err != nil {
 		return Block{}, err
 	}
@@ -330,7 +334,7 @@ func (b *BloomClient) GetBlock(ctx context.Context, ref BlockRef) (BlockDirector
 		return BlockDirectory{}, fmt.Errorf("failed to create block directory %s: %w", path, err)
 	}
 
-	err = v1.UnTarCompress(ref.Encoding, path, rc)
+	err = v1.UnTarCompress(ref.Codec, path, rc)
 	if err != nil {
 		return BlockDirectory{}, fmt.Errorf("failed to extract block file %s: %w", key, err)
 	}
@@ -500,12 +504,12 @@ func (c *cachedListOpObjectClient) List(ctx context.Context, prefix string, deli
 		cacheDur time.Duration
 	)
 	defer func() {
-		if sp := opentracing.SpanFromContext(ctx); sp != nil {
-			sp.LogKV(
-				"cache_duration", cacheDur,
-				"total_duration", time.Since(start),
-			)
-		}
+		sp := trace.SpanFromContext(ctx)
+		sp.SetAttributes(
+			attribute.String("cache_duration", cacheDur.String()),
+			attribute.String("total_duration", time.Since(start).String()),
+		)
+
 	}()
 
 	if delimiter != "" {

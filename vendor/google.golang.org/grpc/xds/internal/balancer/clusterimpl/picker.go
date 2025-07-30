@@ -19,6 +19,8 @@
 package clusterimpl
 
 import (
+	"context"
+
 	v3orcapb "github.com/cncf/xds/go/xds/data/orca/v3"
 	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/codes"
@@ -26,6 +28,8 @@ import (
 	"google.golang.org/grpc/internal/stats"
 	"google.golang.org/grpc/internal/wrr"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/xds/internal"
+	"google.golang.org/grpc/xds/internal/clients"
 	"google.golang.org/grpc/xds/internal/xdsclient"
 )
 
@@ -69,10 +73,10 @@ func (d *dropper) drop() (ret bool) {
 
 // loadReporter wraps the methods from the loadStore that are used here.
 type loadReporter interface {
-	CallStarted(locality string)
-	CallFinished(locality string, err error)
-	CallServerLoad(locality, name string, val float64)
-	CallDropped(locality string)
+	CallStarted(locality clients.Locality)
+	CallFinished(locality clients.Locality, err error)
+	CallServerLoad(locality clients.Locality, name string, val float64)
+	CallDropped(category string)
 }
 
 // Picker implements RPC drop, circuit breaking drop and load reporting.
@@ -85,25 +89,23 @@ type picker struct {
 	telemetryLabels map[string]string
 }
 
-func (b *clusterImplBalancer) newPicker(config *dropConfigs) *picker {
-	return &picker{
-		drops:           config.drops,
-		s:               b.childState,
-		loadStore:       b.loadWrapper,
-		counter:         config.requestCounter,
-		countMax:        config.requestCountMax,
-		telemetryLabels: b.telemetryLabels,
+func telemetryLabels(ctx context.Context) map[string]string {
+	if ctx == nil {
+		return nil
 	}
+	labels := stats.GetLabels(ctx)
+	if labels == nil {
+		return nil
+	}
+	return labels.TelemetryLabels
 }
 
 func (d *picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 	// Unconditionally set labels if present, even dropped or queued RPC's can
 	// use these labels.
-	if info.Ctx != nil {
-		if labels := stats.GetLabels(info.Ctx); labels != nil && labels.TelemetryLabels != nil {
-			for key, value := range d.telemetryLabels {
-				labels.TelemetryLabels[key] = value
-			}
+	if labels := telemetryLabels(info.Ctx); labels != nil {
+		for key, value := range d.telemetryLabels {
+			labels[key] = value
 		}
 	}
 
@@ -129,23 +131,19 @@ func (d *picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 			if d.loadStore != nil {
 				d.loadStore.CallDropped("")
 			}
-			return balancer.PickResult{}, status.Errorf(codes.Unavailable, err.Error())
+			return balancer.PickResult{}, status.Error(codes.Unavailable, err.Error())
 		}
 	}
 
-	var lIDStr string
+	var lID clients.Locality
 	pr, err := d.s.Picker.Pick(info)
 	if scw, ok := pr.SubConn.(*scWrapper); ok {
 		// This OK check also covers the case err!=nil, because SubConn will be
 		// nil.
 		pr.SubConn = scw.SubConn
-		var e error
 		// If locality ID isn't found in the wrapper, an empty locality ID will
 		// be used.
-		lIDStr, e = scw.localityID().ToString()
-		if e != nil {
-			logger.Infof("failed to marshal LocalityID: %#v, loads won't be reported", scw.localityID())
-		}
+		lID = scw.localityID()
 	}
 
 	if err != nil {
@@ -156,21 +154,26 @@ func (d *picker) Pick(info balancer.PickInfo) (balancer.PickResult, error) {
 		return pr, err
 	}
 
+	if labels := telemetryLabels(info.Ctx); labels != nil {
+		labels["grpc.lb.locality"] = internal.LocalityString(lID)
+	}
+
 	if d.loadStore != nil {
-		d.loadStore.CallStarted(lIDStr)
+		locality := clients.Locality{Region: lID.Region, Zone: lID.Zone, SubZone: lID.SubZone}
+		d.loadStore.CallStarted(locality)
 		oldDone := pr.Done
 		pr.Done = func(info balancer.DoneInfo) {
 			if oldDone != nil {
 				oldDone(info)
 			}
-			d.loadStore.CallFinished(lIDStr, info.Err)
+			d.loadStore.CallFinished(locality, info.Err)
 
 			load, ok := info.ServerLoad.(*v3orcapb.OrcaLoadReport)
 			if !ok || load == nil {
 				return
 			}
 			for n, c := range load.NamedMetrics {
-				d.loadStore.CallServerLoad(lIDStr, n, c)
+				d.loadStore.CallServerLoad(locality, n, c)
 			}
 		}
 	}

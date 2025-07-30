@@ -6172,6 +6172,83 @@ func (c *EC2) CreateIpamWithContext(ctx aws.Context, input *CreateIpamInput, opt
 	return out, req.Send()
 }
 
+const opCreateIpamExternalResourceVerificationToken = "CreateIpamExternalResourceVerificationToken"
+
+// CreateIpamExternalResourceVerificationTokenRequest generates a "aws/request.Request" representing the
+// client's request for the CreateIpamExternalResourceVerificationToken operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See CreateIpamExternalResourceVerificationToken for more information on using the CreateIpamExternalResourceVerificationToken
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//	// Example sending a request using the CreateIpamExternalResourceVerificationTokenRequest method.
+//	req, resp := client.CreateIpamExternalResourceVerificationTokenRequest(params)
+//
+//	err := req.Send()
+//	if err == nil { // resp is now filled
+//	    fmt.Println(resp)
+//	}
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/CreateIpamExternalResourceVerificationToken
+func (c *EC2) CreateIpamExternalResourceVerificationTokenRequest(input *CreateIpamExternalResourceVerificationTokenInput) (req *request.Request, output *CreateIpamExternalResourceVerificationTokenOutput) {
+	op := &request.Operation{
+		Name:       opCreateIpamExternalResourceVerificationToken,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &CreateIpamExternalResourceVerificationTokenInput{}
+	}
+
+	output = &CreateIpamExternalResourceVerificationTokenOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// CreateIpamExternalResourceVerificationToken API operation for Amazon Elastic Compute Cloud.
+//
+// Create a verification token. A verification token is an Amazon Web Services-generated
+// random value that you can use to prove ownership of an external resource.
+// For example, you can use a verification token to validate that you control
+// a public IP address range when you bring an IP address range to Amazon Web
+// Services (BYOIP).
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon Elastic Compute Cloud's
+// API operation CreateIpamExternalResourceVerificationToken for usage and error information.
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/CreateIpamExternalResourceVerificationToken
+func (c *EC2) CreateIpamExternalResourceVerificationToken(input *CreateIpamExternalResourceVerificationTokenInput) (*CreateIpamExternalResourceVerificationTokenOutput, error) {
+	req, out := c.CreateIpamExternalResourceVerificationTokenRequest(input)
+	return out, req.Send()
+}
+
+// CreateIpamExternalResourceVerificationTokenWithContext is the same as CreateIpamExternalResourceVerificationToken with the addition of
+// the ability to pass a context and additional request options.
+//
+// See CreateIpamExternalResourceVerificationToken for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) CreateIpamExternalResourceVerificationTokenWithContext(ctx aws.Context, input *CreateIpamExternalResourceVerificationTokenInput, opts ...request.Option) (*CreateIpamExternalResourceVerificationTokenOutput, error) {
+	req, out := c.CreateIpamExternalResourceVerificationTokenRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
 const opCreateIpamPool = "CreateIpamPool"
 
 // CreateIpamPoolRequest generates a "aws/request.Request" representing the
@@ -12291,6 +12368,83 @@ func (c *EC2) DeleteIpam(input *DeleteIpamInput) (*DeleteIpamOutput, error) {
 // for more information on using Contexts.
 func (c *EC2) DeleteIpamWithContext(ctx aws.Context, input *DeleteIpamInput, opts ...request.Option) (*DeleteIpamOutput, error) {
 	req, out := c.DeleteIpamRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
+const opDeleteIpamExternalResourceVerificationToken = "DeleteIpamExternalResourceVerificationToken"
+
+// DeleteIpamExternalResourceVerificationTokenRequest generates a "aws/request.Request" representing the
+// client's request for the DeleteIpamExternalResourceVerificationToken operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See DeleteIpamExternalResourceVerificationToken for more information on using the DeleteIpamExternalResourceVerificationToken
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//	// Example sending a request using the DeleteIpamExternalResourceVerificationTokenRequest method.
+//	req, resp := client.DeleteIpamExternalResourceVerificationTokenRequest(params)
+//
+//	err := req.Send()
+//	if err == nil { // resp is now filled
+//	    fmt.Println(resp)
+//	}
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/DeleteIpamExternalResourceVerificationToken
+func (c *EC2) DeleteIpamExternalResourceVerificationTokenRequest(input *DeleteIpamExternalResourceVerificationTokenInput) (req *request.Request, output *DeleteIpamExternalResourceVerificationTokenOutput) {
+	op := &request.Operation{
+		Name:       opDeleteIpamExternalResourceVerificationToken,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &DeleteIpamExternalResourceVerificationTokenInput{}
+	}
+
+	output = &DeleteIpamExternalResourceVerificationTokenOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// DeleteIpamExternalResourceVerificationToken API operation for Amazon Elastic Compute Cloud.
+//
+// Delete a verification token. A verification token is an Amazon Web Services-generated
+// random value that you can use to prove ownership of an external resource.
+// For example, you can use a verification token to validate that you control
+// a public IP address range when you bring an IP address range to Amazon Web
+// Services (BYOIP).
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon Elastic Compute Cloud's
+// API operation DeleteIpamExternalResourceVerificationToken for usage and error information.
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/DeleteIpamExternalResourceVerificationToken
+func (c *EC2) DeleteIpamExternalResourceVerificationToken(input *DeleteIpamExternalResourceVerificationTokenInput) (*DeleteIpamExternalResourceVerificationTokenOutput, error) {
+	req, out := c.DeleteIpamExternalResourceVerificationTokenRequest(input)
+	return out, req.Send()
+}
+
+// DeleteIpamExternalResourceVerificationTokenWithContext is the same as DeleteIpamExternalResourceVerificationToken with the addition of
+// the ability to pass a context and additional request options.
+//
+// See DeleteIpamExternalResourceVerificationToken for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) DeleteIpamExternalResourceVerificationTokenWithContext(ctx aws.Context, input *DeleteIpamExternalResourceVerificationTokenInput, opts ...request.Option) (*DeleteIpamExternalResourceVerificationTokenOutput, error) {
+	req, out := c.DeleteIpamExternalResourceVerificationTokenRequest(input)
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
 	return out, req.Send()
@@ -24055,6 +24209,83 @@ func (c *EC2) DescribeIpamByoasnWithContext(ctx aws.Context, input *DescribeIpam
 	return out, req.Send()
 }
 
+const opDescribeIpamExternalResourceVerificationTokens = "DescribeIpamExternalResourceVerificationTokens"
+
+// DescribeIpamExternalResourceVerificationTokensRequest generates a "aws/request.Request" representing the
+// client's request for the DescribeIpamExternalResourceVerificationTokens operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfully.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See DescribeIpamExternalResourceVerificationTokens for more information on using the DescribeIpamExternalResourceVerificationTokens
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//	// Example sending a request using the DescribeIpamExternalResourceVerificationTokensRequest method.
+//	req, resp := client.DescribeIpamExternalResourceVerificationTokensRequest(params)
+//
+//	err := req.Send()
+//	if err == nil { // resp is now filled
+//	    fmt.Println(resp)
+//	}
+//
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/DescribeIpamExternalResourceVerificationTokens
+func (c *EC2) DescribeIpamExternalResourceVerificationTokensRequest(input *DescribeIpamExternalResourceVerificationTokensInput) (req *request.Request, output *DescribeIpamExternalResourceVerificationTokensOutput) {
+	op := &request.Operation{
+		Name:       opDescribeIpamExternalResourceVerificationTokens,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &DescribeIpamExternalResourceVerificationTokensInput{}
+	}
+
+	output = &DescribeIpamExternalResourceVerificationTokensOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// DescribeIpamExternalResourceVerificationTokens API operation for Amazon Elastic Compute Cloud.
+//
+// Describe verification tokens. A verification token is an Amazon Web Services-generated
+// random value that you can use to prove ownership of an external resource.
+// For example, you can use a verification token to validate that you control
+// a public IP address range when you bring an IP address range to Amazon Web
+// Services (BYOIP).
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon Elastic Compute Cloud's
+// API operation DescribeIpamExternalResourceVerificationTokens for usage and error information.
+// See also, https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/DescribeIpamExternalResourceVerificationTokens
+func (c *EC2) DescribeIpamExternalResourceVerificationTokens(input *DescribeIpamExternalResourceVerificationTokensInput) (*DescribeIpamExternalResourceVerificationTokensOutput, error) {
+	req, out := c.DescribeIpamExternalResourceVerificationTokensRequest(input)
+	return out, req.Send()
+}
+
+// DescribeIpamExternalResourceVerificationTokensWithContext is the same as DescribeIpamExternalResourceVerificationTokens with the addition of
+// the ability to pass a context and additional request options.
+//
+// See DescribeIpamExternalResourceVerificationTokens for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *EC2) DescribeIpamExternalResourceVerificationTokensWithContext(ctx aws.Context, input *DescribeIpamExternalResourceVerificationTokensInput, opts ...request.Option) (*DescribeIpamExternalResourceVerificationTokensOutput, error) {
+	req, out := c.DescribeIpamExternalResourceVerificationTokensRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
 const opDescribeIpamPools = "DescribeIpamPools"
 
 // DescribeIpamPoolsRequest generates a "aws/request.Request" representing the
@@ -27608,6 +27839,12 @@ func (c *EC2) DescribePlacementGroupsRequest(input *DescribePlacementGroupsInput
 // DescribePlacementGroups API operation for Amazon Elastic Compute Cloud.
 //
 // Describes the specified placement groups or all of your placement groups.
+//
+// To describe a specific placement group that is shared with your account,
+// you must specify the ID of the placement group using the GroupId parameter.
+// Specifying the name of a shared placement group using the GroupNames parameter
+// will result in an error.
+//
 // For more information, see Placement groups (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html)
 // in the Amazon EC2 User Guide.
 //
@@ -34045,10 +34282,6 @@ func (c *EC2) DescribeVolumesModificationsRequest(input *DescribeVolumesModifica
 //
 // Describes the most recent volume modification request for the specified EBS
 // volumes.
-//
-// If a volume has never been modified, some information in the output will
-// be null. If a volume has been modified more than once, the output includes
-// only the most recent modification request.
 //
 // For more information, see Monitor the progress of volume modifications (https://docs.aws.amazon.com/ebs/latest/userguide/monitoring-volume-modifications.html)
 // in the Amazon EBS User Guide.
@@ -40708,15 +40941,6 @@ func (c *EC2) GetConsoleOutputRequest(input *GetConsoleOutputInput) (req *reques
 // normally be displayed on a physical monitor attached to a computer. For Windows
 // instances, the instance console output includes the last three system event
 // log errors.
-//
-// By default, the console output returns buffered information that was posted
-// shortly after an instance transition state (start, stop, reboot, or terminate).
-// This information is available for at least one hour after the most recent
-// post. Only the most recent 64 KB of console output is available.
-//
-// You can optionally retrieve the latest serial console output at any time
-// during the instance lifecycle. This option is supported on instance types
-// that use the Nitro hypervisor.
 //
 // For more information, see Instance console output (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-console.html#instance-console-console-output)
 // in the Amazon EC2 User Guide.
@@ -73802,6 +74026,114 @@ func (s *CreateInternetGatewayOutput) SetInternetGateway(v *InternetGateway) *Cr
 	return s
 }
 
+type CreateIpamExternalResourceVerificationTokenInput struct {
+	_ struct{} `type:"structure"`
+
+	// A unique, case-sensitive identifier that you provide to ensure the idempotency
+	// of the request. For more information, see Ensuring idempotency (https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html).
+	ClientToken *string `type:"string" idempotencyToken:"true"`
+
+	// A check for whether you have the required permissions for the action without
+	// actually making the request and provides an error response. If you have the
+	// required permissions, the error response is DryRunOperation. Otherwise, it
+	// is UnauthorizedOperation.
+	DryRun *bool `type:"boolean"`
+
+	// The ID of the IPAM that will create the token.
+	//
+	// IpamId is a required field
+	IpamId *string `type:"string" required:"true"`
+
+	// Token tags.
+	TagSpecifications []*TagSpecification `locationName:"TagSpecification" locationNameList:"item" type:"list"`
+}
+
+// String returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s CreateIpamExternalResourceVerificationTokenInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s CreateIpamExternalResourceVerificationTokenInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *CreateIpamExternalResourceVerificationTokenInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "CreateIpamExternalResourceVerificationTokenInput"}
+	if s.IpamId == nil {
+		invalidParams.Add(request.NewErrParamRequired("IpamId"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetClientToken sets the ClientToken field's value.
+func (s *CreateIpamExternalResourceVerificationTokenInput) SetClientToken(v string) *CreateIpamExternalResourceVerificationTokenInput {
+	s.ClientToken = &v
+	return s
+}
+
+// SetDryRun sets the DryRun field's value.
+func (s *CreateIpamExternalResourceVerificationTokenInput) SetDryRun(v bool) *CreateIpamExternalResourceVerificationTokenInput {
+	s.DryRun = &v
+	return s
+}
+
+// SetIpamId sets the IpamId field's value.
+func (s *CreateIpamExternalResourceVerificationTokenInput) SetIpamId(v string) *CreateIpamExternalResourceVerificationTokenInput {
+	s.IpamId = &v
+	return s
+}
+
+// SetTagSpecifications sets the TagSpecifications field's value.
+func (s *CreateIpamExternalResourceVerificationTokenInput) SetTagSpecifications(v []*TagSpecification) *CreateIpamExternalResourceVerificationTokenInput {
+	s.TagSpecifications = v
+	return s
+}
+
+type CreateIpamExternalResourceVerificationTokenOutput struct {
+	_ struct{} `type:"structure"`
+
+	// The verification token.
+	IpamExternalResourceVerificationToken *IpamExternalResourceVerificationToken `locationName:"ipamExternalResourceVerificationToken" type:"structure"`
+}
+
+// String returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s CreateIpamExternalResourceVerificationTokenOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s CreateIpamExternalResourceVerificationTokenOutput) GoString() string {
+	return s.String()
+}
+
+// SetIpamExternalResourceVerificationToken sets the IpamExternalResourceVerificationToken field's value.
+func (s *CreateIpamExternalResourceVerificationTokenOutput) SetIpamExternalResourceVerificationToken(v *IpamExternalResourceVerificationToken) *CreateIpamExternalResourceVerificationTokenOutput {
+	s.IpamExternalResourceVerificationToken = v
+	return s
+}
+
 type CreateIpamInput struct {
 	_ struct{} `type:"structure"`
 
@@ -73993,14 +74325,21 @@ type CreateIpamPoolInput struct {
 	// IpamScopeId is a required field
 	IpamScopeId *string `type:"string" required:"true"`
 
-	// In IPAM, the locale is the Amazon Web Services Region or, for IPAM IPv4 pools
-	// in the public scope, the network border group for an Amazon Web Services
-	// Local Zone where you want to make an IPAM pool available for allocations
-	// (supported Local Zones (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html#byoip-zone-avail)).
+	// The locale for the pool should be one of the following:
+	//
+	//    * An Amazon Web Services Region where you want this IPAM pool to be available
+	//    for allocations.
+	//
+	//    * The network border group for an Amazon Web Services Local Zone where
+	//    you want this IPAM pool to be available for allocations (supported Local
+	//    Zones (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html#byoip-zone-avail)).
+	//    This option is only available for IPAM IPv4 pools in the public scope.
+	//
 	// If you do not choose a locale, resources in Regions others than the IPAM's
 	// home region cannot use CIDRs from this pool.
 	//
-	// Possible values: Any Amazon Web Services Region, such as us-east-1.
+	// Possible values: Any Amazon Web Services Region or supported Amazon Web Services
+	// Local Zone.
 	Locale *string `type:"string"`
 
 	// The IP address source for pools in the public scope. Only used for provisioning
@@ -85225,6 +85564,95 @@ func (s DeleteInternetGatewayOutput) String() string {
 // value will be replaced with "sensitive".
 func (s DeleteInternetGatewayOutput) GoString() string {
 	return s.String()
+}
+
+type DeleteIpamExternalResourceVerificationTokenInput struct {
+	_ struct{} `type:"structure"`
+
+	// A check for whether you have the required permissions for the action without
+	// actually making the request and provides an error response. If you have the
+	// required permissions, the error response is DryRunOperation. Otherwise, it
+	// is UnauthorizedOperation.
+	DryRun *bool `type:"boolean"`
+
+	// The token ID.
+	//
+	// IpamExternalResourceVerificationTokenId is a required field
+	IpamExternalResourceVerificationTokenId *string `type:"string" required:"true"`
+}
+
+// String returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DeleteIpamExternalResourceVerificationTokenInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DeleteIpamExternalResourceVerificationTokenInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DeleteIpamExternalResourceVerificationTokenInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DeleteIpamExternalResourceVerificationTokenInput"}
+	if s.IpamExternalResourceVerificationTokenId == nil {
+		invalidParams.Add(request.NewErrParamRequired("IpamExternalResourceVerificationTokenId"))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDryRun sets the DryRun field's value.
+func (s *DeleteIpamExternalResourceVerificationTokenInput) SetDryRun(v bool) *DeleteIpamExternalResourceVerificationTokenInput {
+	s.DryRun = &v
+	return s
+}
+
+// SetIpamExternalResourceVerificationTokenId sets the IpamExternalResourceVerificationTokenId field's value.
+func (s *DeleteIpamExternalResourceVerificationTokenInput) SetIpamExternalResourceVerificationTokenId(v string) *DeleteIpamExternalResourceVerificationTokenInput {
+	s.IpamExternalResourceVerificationTokenId = &v
+	return s
+}
+
+type DeleteIpamExternalResourceVerificationTokenOutput struct {
+	_ struct{} `type:"structure"`
+
+	// The verification token.
+	IpamExternalResourceVerificationToken *IpamExternalResourceVerificationToken `locationName:"ipamExternalResourceVerificationToken" type:"structure"`
+}
+
+// String returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DeleteIpamExternalResourceVerificationTokenOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DeleteIpamExternalResourceVerificationTokenOutput) GoString() string {
+	return s.String()
+}
+
+// SetIpamExternalResourceVerificationToken sets the IpamExternalResourceVerificationToken field's value.
+func (s *DeleteIpamExternalResourceVerificationTokenOutput) SetIpamExternalResourceVerificationToken(v *IpamExternalResourceVerificationToken) *DeleteIpamExternalResourceVerificationTokenOutput {
+	s.IpamExternalResourceVerificationToken = v
+	return s
 }
 
 type DeleteIpamInput struct {
@@ -100197,6 +100625,151 @@ func (s *DescribeIpamByoasnOutput) SetNextToken(v string) *DescribeIpamByoasnOut
 	return s
 }
 
+type DescribeIpamExternalResourceVerificationTokensInput struct {
+	_ struct{} `type:"structure"`
+
+	// A check for whether you have the required permissions for the action without
+	// actually making the request and provides an error response. If you have the
+	// required permissions, the error response is DryRunOperation. Otherwise, it
+	// is UnauthorizedOperation.
+	DryRun *bool `type:"boolean"`
+
+	// One or more filters for the request. For more information about filtering,
+	// see Filtering CLI output (https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-filter.html).
+	//
+	// Available filters:
+	//
+	//    * ipam-arn
+	//
+	//    * ipam-external-resource-verification-token-arn
+	//
+	//    * ipam-external-resource-verification-token-id
+	//
+	//    * ipam-id
+	//
+	//    * ipam-region
+	//
+	//    * state
+	//
+	//    * status
+	//
+	//    * token-name
+	//
+	//    * token-value
+	Filters []*Filter `locationName:"Filter" locationNameList:"Filter" type:"list"`
+
+	// Verification token IDs.
+	IpamExternalResourceVerificationTokenIds []*string `locationName:"IpamExternalResourceVerificationTokenId" locationNameList:"item" type:"list"`
+
+	// The maximum number of tokens to return in one page of results.
+	MaxResults *int64 `min:"5" type:"integer"`
+
+	// The token for the next page of results.
+	NextToken *string `type:"string"`
+}
+
+// String returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DescribeIpamExternalResourceVerificationTokensInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DescribeIpamExternalResourceVerificationTokensInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DescribeIpamExternalResourceVerificationTokensInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DescribeIpamExternalResourceVerificationTokensInput"}
+	if s.MaxResults != nil && *s.MaxResults < 5 {
+		invalidParams.Add(request.NewErrParamMinValue("MaxResults", 5))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetDryRun sets the DryRun field's value.
+func (s *DescribeIpamExternalResourceVerificationTokensInput) SetDryRun(v bool) *DescribeIpamExternalResourceVerificationTokensInput {
+	s.DryRun = &v
+	return s
+}
+
+// SetFilters sets the Filters field's value.
+func (s *DescribeIpamExternalResourceVerificationTokensInput) SetFilters(v []*Filter) *DescribeIpamExternalResourceVerificationTokensInput {
+	s.Filters = v
+	return s
+}
+
+// SetIpamExternalResourceVerificationTokenIds sets the IpamExternalResourceVerificationTokenIds field's value.
+func (s *DescribeIpamExternalResourceVerificationTokensInput) SetIpamExternalResourceVerificationTokenIds(v []*string) *DescribeIpamExternalResourceVerificationTokensInput {
+	s.IpamExternalResourceVerificationTokenIds = v
+	return s
+}
+
+// SetMaxResults sets the MaxResults field's value.
+func (s *DescribeIpamExternalResourceVerificationTokensInput) SetMaxResults(v int64) *DescribeIpamExternalResourceVerificationTokensInput {
+	s.MaxResults = &v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeIpamExternalResourceVerificationTokensInput) SetNextToken(v string) *DescribeIpamExternalResourceVerificationTokensInput {
+	s.NextToken = &v
+	return s
+}
+
+type DescribeIpamExternalResourceVerificationTokensOutput struct {
+	_ struct{} `type:"structure"`
+
+	// Verification tokens.
+	IpamExternalResourceVerificationTokens []*IpamExternalResourceVerificationToken `locationName:"ipamExternalResourceVerificationTokenSet" locationNameList:"item" type:"list"`
+
+	// The token to use to retrieve the next page of results. This value is null
+	// when there are no more results to return.
+	NextToken *string `locationName:"nextToken" type:"string"`
+}
+
+// String returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DescribeIpamExternalResourceVerificationTokensOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s DescribeIpamExternalResourceVerificationTokensOutput) GoString() string {
+	return s.String()
+}
+
+// SetIpamExternalResourceVerificationTokens sets the IpamExternalResourceVerificationTokens field's value.
+func (s *DescribeIpamExternalResourceVerificationTokensOutput) SetIpamExternalResourceVerificationTokens(v []*IpamExternalResourceVerificationToken) *DescribeIpamExternalResourceVerificationTokensOutput {
+	s.IpamExternalResourceVerificationTokens = v
+	return s
+}
+
+// SetNextToken sets the NextToken field's value.
+func (s *DescribeIpamExternalResourceVerificationTokensOutput) SetNextToken(v string) *DescribeIpamExternalResourceVerificationTokensOutput {
+	s.NextToken = &v
+	return s
+}
+
 type DescribeIpamPoolsInput struct {
 	_ struct{} `type:"structure"`
 
@@ -104283,7 +104856,13 @@ type DescribePlacementGroupsInput struct {
 
 	// The names of the placement groups.
 	//
-	// Default: Describes all your placement groups, or only those otherwise specified.
+	// Constraints:
+	//
+	//    * You can specify a name only if the placement group is owned by your
+	//    account.
+	//
+	//    * If a placement group is shared with your account, specifying the name
+	//    results in an error. You must use the GroupId parameter instead.
 	GroupNames []*string `locationName:"groupName" type:"list"`
 }
 
@@ -124121,9 +124700,38 @@ type FleetLaunchTemplateOverrides struct {
 	// The Availability Zone in which to launch the instances.
 	AvailabilityZone *string `locationName:"availabilityZone" type:"string"`
 
-	// The ID of the AMI. An AMI is required to launch an instance. This parameter
-	// is only available for fleets of type instant. For fleets of type maintain
-	// and request, you must specify the AMI ID in the launch template.
+	// The ID of the AMI in the format ami-17characters00000.
+	//
+	// Alternatively, you can specify a Systems Manager parameter, using one of
+	// the following formats. The Systems Manager parameter will resolve to an AMI
+	// ID on launch.
+	//
+	// To reference a public parameter:
+	//
+	//    * resolve:ssm:public-parameter
+	//
+	// To reference a parameter stored in the same account:
+	//
+	//    * resolve:ssm:parameter-name
+	//
+	//    * resolve:ssm:parameter-name:version-number
+	//
+	//    * resolve:ssm:parameter-name:label
+	//
+	// To reference a parameter shared from another Amazon Web Services account:
+	//
+	//    * resolve:ssm:parameter-ARN
+	//
+	//    * resolve:ssm:parameter-ARN:version-number
+	//
+	//    * resolve:ssm:parameter-ARN:label
+	//
+	// For more information, see Use a Systems Manager parameter instead of an AMI
+	// ID (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html#use-an-ssm-parameter-instead-of-an-ami-id)
+	// in the Amazon EC2 User Guide.
+	//
+	// This parameter is only available for fleets of type instant. For fleets of
+	// type maintain and request, you must specify the AMI ID in the launch template.
 	ImageId *string `locationName:"imageId" type:"string"`
 
 	// The attributes for the instance types. When you specify instance attributes,
@@ -124171,7 +124779,13 @@ type FleetLaunchTemplateOverrides struct {
 	// The ID of the subnet in which to launch the instances.
 	SubnetId *string `locationName:"subnetId" type:"string"`
 
-	// The number of units provided by the specified instance type.
+	// The number of units provided by the specified instance type. These are the
+	// same units that you chose to set the target capacity in terms of instances,
+	// or a performance characteristic such as vCPUs, memory, or I/O.
+	//
+	// If the target capacity divided by this value is not a whole number, Amazon
+	// EC2 rounds the number of instances to the next whole number. If this value
+	// is not specified, the default is 1.
 	//
 	// When specifying weights, the price used in the lowest-price and price-capacity-optimized
 	// allocation strategies is per unit hour (where the instance price is divided
@@ -124260,9 +124874,38 @@ type FleetLaunchTemplateOverridesRequest struct {
 	// The Availability Zone in which to launch the instances.
 	AvailabilityZone *string `type:"string"`
 
-	// The ID of the AMI. An AMI is required to launch an instance. This parameter
-	// is only available for fleets of type instant. For fleets of type maintain
-	// and request, you must specify the AMI ID in the launch template.
+	// The ID of the AMI in the format ami-17characters00000.
+	//
+	// Alternatively, you can specify a Systems Manager parameter, using one of
+	// the following formats. The Systems Manager parameter will resolve to an AMI
+	// ID on launch.
+	//
+	// To reference a public parameter:
+	//
+	//    * resolve:ssm:public-parameter
+	//
+	// To reference a parameter stored in the same account:
+	//
+	//    * resolve:ssm:parameter-name
+	//
+	//    * resolve:ssm:parameter-name:version-number
+	//
+	//    * resolve:ssm:parameter-name:label
+	//
+	// To reference a parameter shared from another Amazon Web Services account:
+	//
+	//    * resolve:ssm:parameter-ARN
+	//
+	//    * resolve:ssm:parameter-ARN:version-number
+	//
+	//    * resolve:ssm:parameter-ARN:label
+	//
+	// For more information, see Use a Systems Manager parameter instead of an AMI
+	// ID (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html#use-an-ssm-parameter-instead-of-an-ami-id)
+	// in the Amazon EC2 User Guide.
+	//
+	// This parameter is only available for fleets of type instant. For fleets of
+	// type maintain and request, you must specify the AMI ID in the launch template.
 	ImageId *string `type:"string"`
 
 	// The attributes for the instance types. When you specify instance attributes,
@@ -124312,7 +124955,13 @@ type FleetLaunchTemplateOverridesRequest struct {
 	// A request of type instant can have only one subnet ID.
 	SubnetId *string `type:"string"`
 
-	// The number of units provided by the specified instance type.
+	// The number of units provided by the specified instance type. These are the
+	// same units that you chose to set the target capacity in terms of instances,
+	// or a performance characteristic such as vCPUs, memory, or I/O.
+	//
+	// If the target capacity divided by this value is not a whole number, Amazon
+	// EC2 rounds the number of instances to the next whole number. If this value
+	// is not specified, the default is 1.
 	//
 	// When specifying weights, the price used in the lowest-price and price-capacity-optimized
 	// allocation strategies is per unit hour (where the instance price is divided
@@ -140934,7 +141583,8 @@ type IpamDiscoveredResourceCidr struct {
 	// The resource discovery ID.
 	IpamResourceDiscoveryId *string `locationName:"ipamResourceDiscoveryId" type:"string"`
 
-	// For elastic IP addresses, this is the status of an attached network interface.
+	// For elastic network interfaces, this is the status of whether or not the
+	// elastic network interface is attached.
 	NetworkInterfaceAttachmentStatus *string `locationName:"networkInterfaceAttachmentStatus" type:"string" enum:"IpamNetworkInterfaceAttachmentStatus"`
 
 	// The resource CIDR.
@@ -141107,6 +141757,131 @@ func (s *IpamDiscoveryFailureReason) SetMessage(v string) *IpamDiscoveryFailureR
 	return s
 }
 
+// A verification token is an Amazon Web Services-generated random value that
+// you can use to prove ownership of an external resource. For example, you
+// can use a verification token to validate that you control a public IP address
+// range when you bring an IP address range to Amazon Web Services (BYOIP).
+type IpamExternalResourceVerificationToken struct {
+	_ struct{} `type:"structure"`
+
+	// ARN of the IPAM that created the token.
+	IpamArn *string `locationName:"ipamArn" min:"1" type:"string"`
+
+	// Token ARN.
+	IpamExternalResourceVerificationTokenArn *string `locationName:"ipamExternalResourceVerificationTokenArn" min:"1" type:"string"`
+
+	// The ID of the token.
+	IpamExternalResourceVerificationTokenId *string `locationName:"ipamExternalResourceVerificationTokenId" type:"string"`
+
+	// The ID of the IPAM that created the token.
+	IpamId *string `locationName:"ipamId" type:"string"`
+
+	// Region of the IPAM that created the token.
+	IpamRegion *string `locationName:"ipamRegion" type:"string"`
+
+	// Token expiration.
+	NotAfter *time.Time `locationName:"notAfter" type:"timestamp"`
+
+	// Token state.
+	State *string `locationName:"state" type:"string" enum:"IpamExternalResourceVerificationTokenState"`
+
+	// Token status.
+	Status *string `locationName:"status" type:"string" enum:"TokenState"`
+
+	// Token tags.
+	Tags []*Tag `locationName:"tagSet" locationNameList:"item" type:"list"`
+
+	// Token name.
+	TokenName *string `locationName:"tokenName" type:"string"`
+
+	// Token value.
+	TokenValue *string `locationName:"tokenValue" type:"string"`
+}
+
+// String returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s IpamExternalResourceVerificationToken) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation.
+//
+// API parameter values that are decorated as "sensitive" in the API will not
+// be included in the string output. The member name will be present, but the
+// value will be replaced with "sensitive".
+func (s IpamExternalResourceVerificationToken) GoString() string {
+	return s.String()
+}
+
+// SetIpamArn sets the IpamArn field's value.
+func (s *IpamExternalResourceVerificationToken) SetIpamArn(v string) *IpamExternalResourceVerificationToken {
+	s.IpamArn = &v
+	return s
+}
+
+// SetIpamExternalResourceVerificationTokenArn sets the IpamExternalResourceVerificationTokenArn field's value.
+func (s *IpamExternalResourceVerificationToken) SetIpamExternalResourceVerificationTokenArn(v string) *IpamExternalResourceVerificationToken {
+	s.IpamExternalResourceVerificationTokenArn = &v
+	return s
+}
+
+// SetIpamExternalResourceVerificationTokenId sets the IpamExternalResourceVerificationTokenId field's value.
+func (s *IpamExternalResourceVerificationToken) SetIpamExternalResourceVerificationTokenId(v string) *IpamExternalResourceVerificationToken {
+	s.IpamExternalResourceVerificationTokenId = &v
+	return s
+}
+
+// SetIpamId sets the IpamId field's value.
+func (s *IpamExternalResourceVerificationToken) SetIpamId(v string) *IpamExternalResourceVerificationToken {
+	s.IpamId = &v
+	return s
+}
+
+// SetIpamRegion sets the IpamRegion field's value.
+func (s *IpamExternalResourceVerificationToken) SetIpamRegion(v string) *IpamExternalResourceVerificationToken {
+	s.IpamRegion = &v
+	return s
+}
+
+// SetNotAfter sets the NotAfter field's value.
+func (s *IpamExternalResourceVerificationToken) SetNotAfter(v time.Time) *IpamExternalResourceVerificationToken {
+	s.NotAfter = &v
+	return s
+}
+
+// SetState sets the State field's value.
+func (s *IpamExternalResourceVerificationToken) SetState(v string) *IpamExternalResourceVerificationToken {
+	s.State = &v
+	return s
+}
+
+// SetStatus sets the Status field's value.
+func (s *IpamExternalResourceVerificationToken) SetStatus(v string) *IpamExternalResourceVerificationToken {
+	s.Status = &v
+	return s
+}
+
+// SetTags sets the Tags field's value.
+func (s *IpamExternalResourceVerificationToken) SetTags(v []*Tag) *IpamExternalResourceVerificationToken {
+	s.Tags = v
+	return s
+}
+
+// SetTokenName sets the TokenName field's value.
+func (s *IpamExternalResourceVerificationToken) SetTokenName(v string) *IpamExternalResourceVerificationToken {
+	s.TokenName = &v
+	return s
+}
+
+// SetTokenValue sets the TokenValue field's value.
+func (s *IpamExternalResourceVerificationToken) SetTokenValue(v string) *IpamExternalResourceVerificationToken {
+	s.TokenValue = &v
+	return s
+}
+
 // The operating Regions for an IPAM. Operating Regions are Amazon Web Services
 // Regions where the IPAM is allowed to manage IP address CIDRs. IPAM only discovers
 // and monitors resources in the Amazon Web Services Regions you select as operating
@@ -141223,10 +141998,18 @@ type IpamPool struct {
 	// overlap or conflict.
 	IpamScopeType *string `locationName:"ipamScopeType" type:"string" enum:"IpamScopeType"`
 
-	// The locale of the IPAM pool. In IPAM, the locale is the Amazon Web Services
-	// Region or, for IPAM IPv4 pools in the public scope, the network border group
-	// for an Amazon Web Services Local Zone where you want to make an IPAM pool
-	// available for allocations (supported Local Zones (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html#byoip-zone-avail)).
+	// The locale of the IPAM pool.
+	//
+	// The locale for the pool should be one of the following:
+	//
+	//    * An Amazon Web Services Region where you want this IPAM pool to be available
+	//    for allocations.
+	//
+	//    * The network border group for an Amazon Web Services Local Zone where
+	//    you want this IPAM pool to be available for allocations (supported Local
+	//    Zones (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html#byoip-zone-avail)).
+	//    This option is only available for IPAM IPv4 pools in the public scope.
+	//
 	// If you choose an Amazon Web Services Region for locale that has not been
 	// configured as an operating Region for the IPAM, you'll get an error.
 	Locale *string `locationName:"locale" type:"string"`
@@ -145453,9 +146236,15 @@ type LaunchTemplateOverrides struct {
 	// The ID of the subnet in which to launch the instances.
 	SubnetId *string `locationName:"subnetId" type:"string"`
 
-	// The number of units provided by the specified instance type.
+	// The number of units provided by the specified instance type. These are the
+	// same units that you chose to set the target capacity in terms of instances,
+	// or a performance characteristic such as vCPUs, memory, or I/O.
 	//
-	// When specifying weights, the price used in the lowest-price and price-capacity-optimized
+	// If the target capacity divided by this value is not a whole number, Amazon
+	// EC2 rounds the number of instances to the next whole number. If this value
+	// is not specified, the default is 1.
+	//
+	// When specifying weights, the price used in the lowestPrice and priceCapacityOptimized
 	// allocation strategies is per unit hour (where the instance price is divided
 	// by the specified weight). However, if all the specified weights are above
 	// the requested TargetCapacity, resulting in only 1 instance being launched,
@@ -163842,8 +164631,8 @@ type ProvisionIpamPoolCidrInput struct {
 	Cidr *string `type:"string"`
 
 	// A signed document that proves that you are authorized to bring a specified
-	// IP address range to Amazon using BYOIP. This option applies to public pools
-	// only.
+	// IP address range to Amazon using BYOIP. This option only applies to IPv4
+	// and IPv6 pools in the public scope.
 	CidrAuthorizationContext *IpamCidrAuthorizationContext `type:"structure"`
 
 	// A unique, case-sensitive identifier that you provide to ensure the idempotency
@@ -163856,6 +164645,10 @@ type ProvisionIpamPoolCidrInput struct {
 	// is UnauthorizedOperation.
 	DryRun *bool `type:"boolean"`
 
+	// Verification token ID. This option only applies to IPv4 and IPv6 pools in
+	// the public scope.
+	IpamExternalResourceVerificationTokenId *string `type:"string"`
+
 	// The ID of the IPAM pool to which you want to assign a CIDR.
 	//
 	// IpamPoolId is a required field
@@ -163866,6 +164659,11 @@ type ProvisionIpamPoolCidrInput struct {
 	// provisioning CIDRs to pools with source pools. Cannot be used to provision
 	// BYOIP CIDRs to top-level pools. Either "NetmaskLength" or "Cidr" is required.
 	NetmaskLength *int64 `type:"integer"`
+
+	// The method for verifying control of a public IP address range. Defaults to
+	// remarks-x509 if not specified. This option only applies to IPv4 and IPv6
+	// pools in the public scope.
+	VerificationMethod *string `type:"string" enum:"VerificationMethod"`
 }
 
 // String returns the string representation.
@@ -163923,6 +164721,12 @@ func (s *ProvisionIpamPoolCidrInput) SetDryRun(v bool) *ProvisionIpamPoolCidrInp
 	return s
 }
 
+// SetIpamExternalResourceVerificationTokenId sets the IpamExternalResourceVerificationTokenId field's value.
+func (s *ProvisionIpamPoolCidrInput) SetIpamExternalResourceVerificationTokenId(v string) *ProvisionIpamPoolCidrInput {
+	s.IpamExternalResourceVerificationTokenId = &v
+	return s
+}
+
 // SetIpamPoolId sets the IpamPoolId field's value.
 func (s *ProvisionIpamPoolCidrInput) SetIpamPoolId(v string) *ProvisionIpamPoolCidrInput {
 	s.IpamPoolId = &v
@@ -163932,6 +164736,12 @@ func (s *ProvisionIpamPoolCidrInput) SetIpamPoolId(v string) *ProvisionIpamPoolC
 // SetNetmaskLength sets the NetmaskLength field's value.
 func (s *ProvisionIpamPoolCidrInput) SetNetmaskLength(v int64) *ProvisionIpamPoolCidrInput {
 	s.NetmaskLength = &v
+	return s
+}
+
+// SetVerificationMethod sets the VerificationMethod field's value.
+func (s *ProvisionIpamPoolCidrInput) SetVerificationMethod(v string) *ProvisionIpamPoolCidrInput {
+	s.VerificationMethod = &v
 	return s
 }
 
@@ -168183,12 +168993,17 @@ type RequestLaunchTemplateData struct {
 	// The name or Amazon Resource Name (ARN) of an IAM instance profile.
 	IamInstanceProfile *LaunchTemplateIamInstanceProfileSpecificationRequest `type:"structure"`
 
-	// The ID of the AMI. Alternatively, you can specify a Systems Manager parameter,
-	// which will resolve to an AMI ID on launch.
+	// The ID of the AMI in the format ami-17characters00000.
 	//
-	// Valid formats:
+	// Alternatively, you can specify a Systems Manager parameter, using one of
+	// the following formats. The Systems Manager parameter will resolve to an AMI
+	// ID on launch.
 	//
-	//    * ami-17characters00000
+	// To reference a public parameter:
+	//
+	//    * resolve:ssm:public-parameter
+	//
+	// To reference a parameter stored in the same account:
 	//
 	//    * resolve:ssm:parameter-name
 	//
@@ -168196,15 +169011,26 @@ type RequestLaunchTemplateData struct {
 	//
 	//    * resolve:ssm:parameter-name:label
 	//
-	//    * resolve:ssm:public-parameter
+	// To reference a parameter shared from another Amazon Web Services account:
 	//
-	// Currently, EC2 Fleet and Spot Fleet do not support specifying a Systems Manager
-	// parameter. If the launch template will be used by an EC2 Fleet or Spot Fleet,
-	// you must specify the AMI ID.
+	//    * resolve:ssm:parameter-ARN
+	//
+	//    * resolve:ssm:parameter-ARN:version-number
+	//
+	//    * resolve:ssm:parameter-ARN:label
 	//
 	// For more information, see Use a Systems Manager parameter instead of an AMI
 	// ID (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html#use-an-ssm-parameter-instead-of-an-ami-id)
 	// in the Amazon EC2 User Guide.
+	//
+	// If the launch template will be used for an EC2 Fleet or Spot Fleet, note
+	// the following:
+	//
+	//    * Only EC2 Fleets of type instant support specifying a Systems Manager
+	//    parameter.
+	//
+	//    * For EC2 Fleets of type maintain or request, or for Spot Fleets, you
+	//    must specify the AMI ID.
 	ImageId *string `type:"string"`
 
 	// Indicates whether an instance stops or terminates when you initiate shutdown
@@ -177629,6 +178455,12 @@ type SpotFleetLaunchSpecification struct {
 	// If the target capacity divided by this value is not a whole number, Amazon
 	// EC2 rounds the number of instances to the next whole number. If this value
 	// is not specified, the default is 1.
+	//
+	// When specifying weights, the price used in the lowestPrice and priceCapacityOptimized
+	// allocation strategies is per unit hour (where the instance price is divided
+	// by the specified weight). However, if all the specified weights are above
+	// the requested TargetCapacity, resulting in only 1 instance being launched,
+	// the price used is per instance hour.
 	WeightedCapacity *float64 `locationName:"weightedCapacity" type:"double"`
 }
 
@@ -189002,16 +189834,13 @@ func (s *VolumeDetail) SetSize(v int64) *VolumeDetail {
 }
 
 // Describes the modification status of an EBS volume.
-//
-// If the volume has never been modified, some element values will be null.
 type VolumeModification struct {
 	_ struct{} `type:"structure"`
 
 	// The modification completion or failure time.
 	EndTime *time.Time `locationName:"endTime" type:"timestamp"`
 
-	// The current modification state. The modification state is null for unmodified
-	// volumes.
+	// The current modification state.
 	ModificationState *string `locationName:"modificationState" type:"string" enum:"VolumeModificationState"`
 
 	// The original IOPS rate of the volume.
@@ -198042,6 +198871,38 @@ func IpamDiscoveryFailureCode_Values() []string {
 }
 
 const (
+	// IpamExternalResourceVerificationTokenStateCreateInProgress is a IpamExternalResourceVerificationTokenState enum value
+	IpamExternalResourceVerificationTokenStateCreateInProgress = "create-in-progress"
+
+	// IpamExternalResourceVerificationTokenStateCreateComplete is a IpamExternalResourceVerificationTokenState enum value
+	IpamExternalResourceVerificationTokenStateCreateComplete = "create-complete"
+
+	// IpamExternalResourceVerificationTokenStateCreateFailed is a IpamExternalResourceVerificationTokenState enum value
+	IpamExternalResourceVerificationTokenStateCreateFailed = "create-failed"
+
+	// IpamExternalResourceVerificationTokenStateDeleteInProgress is a IpamExternalResourceVerificationTokenState enum value
+	IpamExternalResourceVerificationTokenStateDeleteInProgress = "delete-in-progress"
+
+	// IpamExternalResourceVerificationTokenStateDeleteComplete is a IpamExternalResourceVerificationTokenState enum value
+	IpamExternalResourceVerificationTokenStateDeleteComplete = "delete-complete"
+
+	// IpamExternalResourceVerificationTokenStateDeleteFailed is a IpamExternalResourceVerificationTokenState enum value
+	IpamExternalResourceVerificationTokenStateDeleteFailed = "delete-failed"
+)
+
+// IpamExternalResourceVerificationTokenState_Values returns all elements of the IpamExternalResourceVerificationTokenState enum
+func IpamExternalResourceVerificationTokenState_Values() []string {
+	return []string{
+		IpamExternalResourceVerificationTokenStateCreateInProgress,
+		IpamExternalResourceVerificationTokenStateCreateComplete,
+		IpamExternalResourceVerificationTokenStateCreateFailed,
+		IpamExternalResourceVerificationTokenStateDeleteInProgress,
+		IpamExternalResourceVerificationTokenStateDeleteComplete,
+		IpamExternalResourceVerificationTokenStateDeleteFailed,
+	}
+}
+
+const (
 	// IpamManagementStateManaged is a IpamManagementState enum value
 	IpamManagementStateManaged = "managed"
 
@@ -200327,9 +201188,6 @@ const (
 	// ResourceTypeVpcBlockPublicAccessExclusion is a ResourceType enum value
 	ResourceTypeVpcBlockPublicAccessExclusion = "vpc-block-public-access-exclusion"
 
-	// ResourceTypeVpcEncryptionControl is a ResourceType enum value
-	ResourceTypeVpcEncryptionControl = "vpc-encryption-control"
-
 	// ResourceTypeIpamResourceDiscovery is a ResourceType enum value
 	ResourceTypeIpamResourceDiscovery = "ipam-resource-discovery"
 
@@ -200338,6 +201196,9 @@ const (
 
 	// ResourceTypeInstanceConnectEndpoint is a ResourceType enum value
 	ResourceTypeInstanceConnectEndpoint = "instance-connect-endpoint"
+
+	// ResourceTypeIpamExternalResourceVerificationToken is a ResourceType enum value
+	ResourceTypeIpamExternalResourceVerificationToken = "ipam-external-resource-verification-token"
 )
 
 // ResourceType_Values returns all elements of the ResourceType enum
@@ -200426,10 +201287,10 @@ func ResourceType_Values() []string {
 		ResourceTypeVerifiedAccessTrustProvider,
 		ResourceTypeVpnConnectionDeviceType,
 		ResourceTypeVpcBlockPublicAccessExclusion,
-		ResourceTypeVpcEncryptionControl,
 		ResourceTypeIpamResourceDiscovery,
 		ResourceTypeIpamResourceDiscoveryAssociation,
 		ResourceTypeInstanceConnectEndpoint,
+		ResourceTypeIpamExternalResourceVerificationToken,
 	}
 }
 
@@ -201214,6 +202075,22 @@ func TieringOperationStatus_Values() []string {
 }
 
 const (
+	// TokenStateValid is a TokenState enum value
+	TokenStateValid = "valid"
+
+	// TokenStateExpired is a TokenState enum value
+	TokenStateExpired = "expired"
+)
+
+// TokenState_Values returns all elements of the TokenState enum
+func TokenState_Values() []string {
+	return []string{
+		TokenStateValid,
+		TokenStateExpired,
+	}
+}
+
+const (
 	// TpmSupportValuesV20 is a TpmSupportValues enum value
 	TpmSupportValuesV20 = "v2.0"
 )
@@ -201898,6 +202775,22 @@ func UserTrustProviderType_Values() []string {
 	return []string{
 		UserTrustProviderTypeIamIdentityCenter,
 		UserTrustProviderTypeOidc,
+	}
+}
+
+const (
+	// VerificationMethodRemarksX509 is a VerificationMethod enum value
+	VerificationMethodRemarksX509 = "remarks-x509"
+
+	// VerificationMethodDnsToken is a VerificationMethod enum value
+	VerificationMethodDnsToken = "dns-token"
+)
+
+// VerificationMethod_Values returns all elements of the VerificationMethod enum
+func VerificationMethod_Values() []string {
+	return []string{
+		VerificationMethodRemarksX509,
+		VerificationMethodDnsToken,
 	}
 }
 

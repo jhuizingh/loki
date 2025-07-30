@@ -183,7 +183,7 @@ func (t *indexSet) ForEach(ctx context.Context, callback index.ForEachIndexCallb
 	}
 	defer t.indexMtx.rUnlock()
 
-	logger := spanlogger.FromContextWithFallback(ctx, t.logger)
+	logger := spanlogger.FromContext(ctx, t.logger)
 	level.Debug(logger).Log("index-files-count", len(t.index))
 
 	for _, idx := range t.index {
@@ -202,7 +202,7 @@ func (t *indexSet) ForEachConcurrent(ctx context.Context, callback index.ForEach
 	}
 	defer t.indexMtx.rUnlock()
 
-	logger := spanlogger.FromContextWithFallback(ctx, t.logger)
+	logger := spanlogger.FromContext(ctx, t.logger)
 	level.Debug(logger).Log("index-files-count", len(t.index))
 
 	if len(t.index) == 0 {
@@ -283,6 +283,11 @@ func (t *indexSet) cleanupDB(fileName string) error {
 }
 
 func (t *indexSet) Sync(ctx context.Context) (err error) {
+	if !t.indexMtx.isReady() {
+		level.Info(t.logger).Log("msg", "skip sync since the index set is not ready")
+		return nil
+	}
+
 	return t.syncWithRetry(ctx, true, false)
 }
 

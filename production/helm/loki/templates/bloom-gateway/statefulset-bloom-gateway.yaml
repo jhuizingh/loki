@@ -19,7 +19,7 @@ spec:
       partition: 0
   serviceName: {{ include "loki.bloomGatewayFullname" . }}-headless
   revisionHistoryLimit: {{ .Values.loki.revisionHistoryLimit }}
-  {{- if and (semverCompare ">= 1.23-0" .Capabilities.KubeVersion.Version) (.Values.bloomGateway.persistence.enableStatefulSetAutoDeletePVC)  }}
+  {{- if and (semverCompare ">= 1.23-0" (include "loki.kubeVersion" .)) (.Values.bloomGateway.persistence.enableStatefulSetAutoDeletePVC)  }}
   persistentVolumeClaimRetentionPolicy:
     whenDeleted: {{ .Values.bloomGateway.persistence.whenDeleted }}
     whenScaled: {{ .Values.bloomGateway.persistence.whenScaled }}
@@ -38,12 +38,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "loki.bloomGatewaySelectorLabels" . | nindent 8 }}
+        {{- include "loki.bloomGatewayLabels" . | nindent 8 }}
         app.kubernetes.io/part-of: memberlist
-        {{- with .Values.loki.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.bloomGateway.podLabels }}
+        {{- with merge (dict) .Values.loki.podLabels .Values.bloomGateway.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
@@ -75,7 +72,7 @@ spec:
           args:
             - -config.file=/etc/loki/config/config.yaml
             - -target=bloom-gateway
-            {{- with .Values.bloomGateway.extraArgs }}
+            {{- with (concat .Values.global.extraArgs .Values.bloomGateway.extraArgs) | uniq }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           ports:
@@ -88,11 +85,11 @@ spec:
             - name: http-memberlist
               containerPort: 7946
               protocol: TCP
-          {{- with .Values.bloomGateway.extraEnv }}
+          {{- with (concat .Values.global.extraEnv .Values.bloomGateway.extraEnv) | uniq }}
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.bloomGateway.extraEnvFrom }}
+          {{- with (concat .Values.global.extraEnvFrom .Values.bloomGateway.extraEnvFrom) | uniq }}
           envFrom:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -112,7 +109,7 @@ spec:
             - name: license
               mountPath: /etc/loki/license
             {{- end }}
-            {{- with .Values.bloomGateway.extraVolumeMounts }}
+            {{- with (concat .Values.global.extraVolumeMounts .Values.bloomGateway.extraVolumeMounts) | uniq }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- with .Values.bloomGateway.resources }}
@@ -155,16 +152,22 @@ spec:
         - name: data
           emptyDir: {}
         {{- end }}
-        {{- with .Values.bloomGateway.extraVolumes }}
+        {{- with (concat .Values.global.extraVolumes .Values.bloomGateway.extraVolumes) | uniq }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
   {{- if .Values.bloomGateway.persistence.enabled }}
   volumeClaimTemplates:
   {{- range .Values.bloomGateway.persistence.claims }}
-    - metadata:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: {{ .name }}
         {{- with .annotations }}
         annotations:
+          {{- . | toYaml | nindent 10 }}
+        {{- end }}
+        {{- with .labels }}
+        labels:
           {{- . | toYaml | nindent 10 }}
         {{- end }}
       spec:

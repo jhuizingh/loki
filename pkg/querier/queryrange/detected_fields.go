@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/axiomhq/hyperloglog"
@@ -27,30 +28,35 @@ func NewDetectedFieldsHandler(
 	limitedHandler base.Handler,
 	logHandler base.Handler,
 	limits Limits,
-) base.Middleware {
-	return base.MiddlewareFunc(func(next base.Handler) base.Handler {
-		return base.HandlerFunc(
-			func(ctx context.Context, req base.Request) (base.Response, error) {
-				r, ok := req.(*DetectedFieldsRequest)
-				if !ok {
-					return nil, httpgrpc.Errorf(
-						http.StatusBadRequest,
-						"invalid request type, expected *DetectedFieldsRequest",
-					)
-				}
+) base.Handler {
+	return base.HandlerFunc(
+		func(ctx context.Context, req base.Request) (base.Response, error) {
+			r, ok := req.(*DetectedFieldsRequest)
+			if !ok {
+				return nil, httpgrpc.Errorf(
+					http.StatusBadRequest,
+					"invalid request type, expected *DetectedFieldsRequest",
+				)
+			}
 
-				resp, err := makeDownstreamRequest(ctx, limits, limitedHandler, logHandler, r)
-				if err != nil {
-					return nil, err
-				}
+			resp, err := makeDownstreamRequest(ctx, limits, limitedHandler, logHandler, r)
+			if err != nil {
+				return nil, err
+			}
 
-				re, ok := resp.(*LokiResponse)
-				if !ok || re.Status != "success" {
-					return resp, nil
-				}
+			re, ok := resp.(*LokiResponse)
+			if !ok || re.Status != "success" {
+				return resp, nil
+			}
 
-				detectedFields := parseDetectedFields(r.FieldLimit, re.Data.Result)
-				fields := make([]*logproto.DetectedField, len(detectedFields))
+			var fields []*logproto.DetectedField
+			var values []string
+
+			if r.Values && r.Name != "" {
+				values = parseDetectedFieldValues(r.Limit, re.Data.Result, r.Name)
+			} else {
+				detectedFields := parseDetectedFields(r.Limit, re.Data.Result)
+				fields = make([]*logproto.DetectedField, len(detectedFields))
 				fieldCount := 0
 				for k, v := range detectedFields {
 					p := v.parsers
@@ -62,20 +68,111 @@ func NewDetectedFieldsHandler(
 						Type:        v.fieldType,
 						Cardinality: v.Estimate(),
 						Parsers:     p,
+						JsonPath:    v.jsonPath,
 					}
 
 					fieldCount++
 				}
+			}
 
-				return &DetectedFieldsResponse{
-					Response: &logproto.DetectedFieldsResponse{
-						Fields:     fields,
-						FieldLimit: r.GetFieldLimit(),
-					},
-					Headers: re.Headers,
-				}, nil
-			})
-	})
+			dfResp := DetectedFieldsResponse{
+				Response: &logproto.DetectedFieldsResponse{
+					Fields: fields,
+					Values: values,
+				},
+				Headers: re.Headers,
+			}
+
+			// Otherwise all they get is the field limit, which is a bit confusing
+			if len(fields) > 0 || len(values) > 0 {
+				dfResp.Response.Limit = r.GetLimit()
+			}
+
+			return &dfResp, nil
+		})
+}
+
+type bytesUnit []string
+
+func (b bytesUnit) Contains(s string) bool {
+	for _, u := range b {
+		if strings.HasSuffix(s, u) {
+			return true
+		}
+	}
+	return false
+}
+
+var allowedBytesUnits = bytesUnit{
+	"b",
+	"kib",
+	"kb",
+	"mib",
+	"mb",
+	"gib",
+	"gb",
+	"tib",
+	"tb",
+	"pib",
+	"pb",
+	"eib",
+	"eb",
+	"ki",
+	"k",
+	"mi",
+	"m",
+	"gi",
+	"g",
+	"ti",
+	"t",
+	"pi",
+	"p",
+	"ei",
+	"e",
+}
+
+func parseDetectedFieldValues(limit uint32, streams []push.Stream, name string) []string {
+	values := map[string]struct{}{}
+	for _, stream := range streams {
+		streamLbls, err := syntax.ParseLabels(stream.Labels)
+		if err != nil {
+			streamLbls = labels.EmptyLabels()
+		}
+
+		for _, entry := range stream.Entries {
+			if len(values) >= int(limit) {
+				break
+			}
+
+			structuredMetadata := getStructuredMetadata(entry)
+			if vals, ok := structuredMetadata[name]; ok {
+				for _, v := range vals {
+					values[v] = struct{}{}
+				}
+			}
+
+			entryLbls := logql_log.NewBaseLabelsBuilder().ForLabels(streamLbls, labels.StableHash(streamLbls))
+			parsedLabels, _ := parseEntry(entry, entryLbls)
+			if vals, ok := parsedLabels[name]; ok {
+				for _, v := range vals {
+					// special case bytes values, so they can be directly inserted into a query
+					if bs, err := humanize.ParseBytes(v); err == nil && allowedBytesUnits.Contains(strings.ToLower(v)) {
+						bsString := strings.Replace(humanize.Bytes(bs), " ", "", 1)
+						values[bsString] = struct{}{}
+					} else {
+						values[v] = struct{}{}
+					}
+				}
+			}
+		}
+	}
+
+	response := make([]string, 0, len(values))
+	for v := range values {
+		response = append(response, v)
+	}
+
+	return response
 }
 
 func makeDownstreamRequest(
@@ -130,6 +227,7 @@ type parsedFields struct {
 	sketch    *hyperloglog.Sketch
 	fieldType logproto.DetectedFieldType
 	parsers   []string
+	jsonPath  []string // Original JSON path as an array of components (e.g., ["user", "id"] for field "user_id")
 }
 
 func newParsedFields(parsers []string) *parsedFields {
@@ -137,13 +235,7 @@ func newParsedFields(parsers []string) *parsedFields {
 		sketch:    hyperloglog.New(),
 		fieldType: logproto.DetectedFieldString,
 		parsers:   parsers,
-	}
-}
-
-func newParsedLabels() *parsedFields {
-	return &parsedFields{
-		sketch:    hyperloglog.New(),
-		fieldType: logproto.DetectedFieldString,
+		jsonPath:  nil,
 	}
 }
 
@@ -225,7 +317,7 @@ func parseDetectedFields(limit uint32, streams logqlmodel.Streams) map[string]*p
 				}
 			}
 
-			entryLbls := logql_log.NewBaseLabelsBuilder().ForLabels(streamLbls, streamLbls.Hash())
+			entryLbls := logql_log.NewBaseLabelsBuilder().ForLabels(streamLbls, labels.StableHash(streamLbls))
 			parsedLabels, parsers := parseEntry(entry, entryLbls)
 			for k, vals := range parsedLabels {
 				df, ok := detectedFields[k]
@@ -243,6 +335,12 @@ func parseDetectedFields(limit uint32, streams logqlmodel.Streams) map[string]*p
 					if !slices.Contains(df.parsers, parser) {
 						df.parsers = append(df.parsers, parser)
 					}
+				}
+
+				// If we parsed with JSON, check for a JSON path
+				if slices.Contains(parsers, "json") {
+					// Get the JSON path if it exists
+					df.jsonPath = entryLbls.GetJSONPath(k)
 				}
 
 				detectType := true
@@ -294,7 +392,7 @@ func parseEntry(entry push.Entry, lbls *logql_log.LabelsBuilder) (map[string][]s
 		lbls.Del(name)
 	}
 	streamLbls := lbls.LabelsResult().Stream()
-	lblBuilder := lbls.ForLabels(streamLbls, streamLbls.Hash())
+	lblBuilder := lbls.ForLabels(streamLbls, labels.StableHash(streamLbls))
 
 	parsed := make(map[string][]string, len(origParsed))
 	for lbl, values := range origParsed {
@@ -308,7 +406,7 @@ func parseEntry(entry push.Entry, lbls *logql_log.LabelsBuilder) (map[string][]s
 
 	line := entry.Line
 	parser := "json"
-	jsonParser := logql_log.NewJSONParser()
+	jsonParser := logql_log.NewJSONParser(true)
 	_, jsonSuccess := jsonParser.Process(0, []byte(line), lblBuilder)
 	if !jsonSuccess || lblBuilder.HasErr() {
 		lblBuilder.Reset()
@@ -336,13 +434,13 @@ func parseEntry(entry push.Entry, lbls *logql_log.LabelsBuilder) (map[string][]s
 	}
 
 	lblsResult := lblBuilder.LabelsResult().Parsed()
-	for _, lbl := range lblsResult {
+	lblsResult.Range(func(lbl labels.Label) {
 		if values, ok := parsedLabels[lbl.Name]; ok {
 			values[lbl.Value] = struct{}{}
 		} else {
 			parsedLabels[lbl.Name] = map[string]struct{}{lbl.Value: {}}
 		}
-	}
+	})
 
 	result := make(map[string][]string, len(parsedLabels))
 	for lbl, values := range parsedLabels {
